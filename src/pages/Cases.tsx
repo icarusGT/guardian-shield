@@ -94,6 +94,12 @@ export default function Cases() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Fraud Cases</h1>
+          <Button asChild>
+            <Link to="/cases/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Case
+            </Link>
+          </Button>
         </div>
 
         {/* Filters */}

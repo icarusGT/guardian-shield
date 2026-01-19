@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Cases from "./pages/Cases";
+import CreateCase from "./pages/CreateCase";
 import CaseDetail from "./pages/CaseDetail";
 import Transactions from "./pages/Transactions";
 import Users from "./pages/Users";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/cases" element={<Cases />} />
+            <Route path="/cases/new" element={<CreateCase />} />
             <Route path="/cases/:caseId" element={<CaseDetail />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/users" element={<Users />} />
