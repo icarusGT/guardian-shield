@@ -12,63 +12,50 @@ import {
   Github,
   ArrowLeft,
   Building2,
+  Phone,
 } from 'lucide-react';
 
 export default function Team() {
   const teamMembers = [
     {
-      name: 'Team Member 1',
-      role: 'Project Lead / Developer',
-      email: 'member1@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Leading the development and architecture of Guardian Shield',
-    },
-    {
-      name: 'Team Member 2',
-      role: 'Full Stack Developer',
-      email: 'member2@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Specialized in frontend and backend integration',
-    },
-    {
-      name: 'Team Member 3',
+      name: 'Shahriar Kabir Saikat',
       role: 'Backend Developer',
-      email: 'member3@student.uiu.ac.bd',
+      email: '0112410092@student.uiu.ac.bd',
+      phone: '0112410092',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Expert in database design and API development',
+      description: 'Expert in backend development and API architecture',
     },
     {
-      name: 'Team Member 4',
+      name: 'Sayeda Sanjida Karim Eisa',
+      role: 'DB Specialist',
+      email: '0112410210@student.uiu.ac.bd',
+      phone: '0112410210',
+      linkedin: '#',
+      github: '#',
+      avatar: '',
+      description: 'Specialized in database design and optimization',
+    },
+    {
+      name: 'Sabiha Akhter',
       role: 'Frontend Developer',
-      email: 'member4@student.uiu.ac.bd',
+      email: '0112410017@student.uiu.ac.bd',
+      phone: '0112410017',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Focused on UI/UX design and user experience',
+      description: 'Focused on frontend development and user interface design',
     },
     {
-      name: 'Team Member 5',
-      role: 'DevOps Engineer',
-      email: 'member5@student.uiu.ac.bd',
+      name: 'Rakibul Hasan Shanto',
+      role: 'Design Specialist',
+      email: '0112410206@student.uiu.ac.bd',
+      phone: '0112410206',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Managing deployment and infrastructure',
-    },
-    {
-      name: 'Team Member 6',
-      role: 'QA Engineer',
-      email: 'member6@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Ensuring quality and testing the system',
+      description: 'Expert in UI/UX design and visual communication',
     },
   ];
 
@@ -110,7 +97,14 @@ export default function Team() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+              <div className="bg-black p-3 rounded">
+                <img 
+                  src="/UniversityLogo.png" 
+                  alt="United International University" 
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
               <Users className="h-5 w-5" />
               <span className="text-sm font-medium">Meet Our Team</span>
             </div>
@@ -132,51 +126,83 @@ export default function Team() {
       {/* Team Section */}
       <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {teamMembers.map((member, index) => (
-              <Card key={index} className="glass-card hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center mb-4">
-                    <Avatar className="h-24 w-24 mb-4">
-                      <AvatarImage src={member.avatar} alt={member.name} />
-                      <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <CardTitle className="text-xl mb-1">{member.name}</CardTitle>
-                    <CardDescription className="text-base font-medium text-primary mb-2">
+              <Card 
+                key={index} 
+                className="glass-card hover:shadow-lg transition-all duration-300 fade-in-up"
+                style={{
+                  animationDelay: `${index * 0.15}s`
+                }}
+              >
+                <CardContent className="pt-8 pb-8">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-6 group">
+                      {/* Animated glow effect behind avatar */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-purple-500 to-pink-500 opacity-60 blur-2xl group-hover:opacity-100 transition-opacity duration-500 avatar-glow" style={{ transform: 'translateZ(0)' }}></div>
+                      
+                      {/* Rotating gradient border wrapper */}
+                      <div className="avatar-border-animated inline-block">
+                        <Avatar className="h-32 w-32 shadow-2xl relative z-10 avatar-animated group-hover:scale-110 transition-all duration-500 border-4 border-background">
+                          <AvatarImage 
+                            src={member.avatar} 
+                            alt={member.name}
+                            className="transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 via-purple-500/20 to-blue-500/20 text-primary transition-all duration-500 group-hover:from-primary/30 group-hover:via-purple-500/30 group-hover:to-blue-500/30">
+                            {member.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      
+                      {/* Outer pulse ring */}
+                      <div className="absolute inset-0 rounded-full border-4 border-primary/20 avatar-pulse pointer-events-none" style={{ transform: 'translateZ(0)' }}></div>
+                    </div>
+                    <CardTitle className="text-2xl mb-2">{member.name}</CardTitle>
+                    <CardDescription className="text-lg font-semibold text-primary mb-3">
                       {member.role}
                     </CardDescription>
-                    <p className="text-sm text-muted-foreground mb-4">{member.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <p className="text-sm text-muted-foreground mb-4 text-justify max-w-md">
+                      {member.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                       <GraduationCap className="h-4 w-4" />
                       <span>United International University</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-2">
+                    {member.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+                        <Phone className="h-4 w-4" />
+                        <span>{member.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4 mt-4">
                       <a
                         href={`mailto:${member.email}`}
-                        className="p-2 rounded-full hover:bg-primary/10 transition-colors"
+                        className="p-3 rounded-full hover:bg-primary/10 transition-colors border border-border hover:border-primary/30"
                         aria-label={`Email ${member.name}`}
+                        title={`Email: ${member.email}`}
                       >
-                        <Mail className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                        <Mail className="h-5 w-5 text-muted-foreground hover:text-primary" />
                       </a>
                       <a
                         href={member.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 rounded-full hover:bg-primary/10 transition-colors"
+                        className="p-3 rounded-full hover:bg-primary/10 transition-colors border border-border hover:border-primary/30"
                         aria-label={`LinkedIn ${member.name}`}
+                        title="LinkedIn Profile"
                       >
-                        <Linkedin className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                        <Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary" />
                       </a>
                       <a
                         href={member.github}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 rounded-full hover:bg-primary/10 transition-colors"
+                        className="p-3 rounded-full hover:bg-primary/10 transition-colors border border-border hover:border-primary/30"
                         aria-label={`GitHub ${member.name}`}
+                        title="GitHub Profile"
                       >
-                        <Github className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                        <Github className="h-5 w-5 text-muted-foreground hover:text-primary" />
                       </a>
                     </div>
                   </div>
