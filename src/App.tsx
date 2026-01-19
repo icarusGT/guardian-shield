@@ -6,6 +6,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Cases from "./pages/Cases";
+import CaseDetail from "./pages/CaseDetail";
+import Transactions from "./pages/Transactions";
+import Users from "./pages/Users";
+import Investigations from "./pages/Investigations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +26,11 @@ const App = () => (
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/cases" element={<Cases />} />
+            <Route path="/cases/:caseId" element={<CaseDetail />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/investigations" element={<Investigations />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
