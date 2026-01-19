@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Users,
@@ -11,7 +12,6 @@ import {
   Github,
   ArrowLeft,
   Building2,
-  Award,
 } from 'lucide-react';
 
 export default function Team() {
@@ -84,7 +84,7 @@ export default function Team() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -115,9 +115,9 @@ export default function Team() {
               <span className="text-sm font-medium">Meet Our Team</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              DataShaak Team
+              <span className="font-bold">DataShaak</span> Team
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               A dedicated group of students from United International University working together 
               to build innovative solutions for fraud detection and management.
             </p>
@@ -188,19 +188,7 @@ export default function Team() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

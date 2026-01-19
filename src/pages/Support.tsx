@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Footer from '@/components/Footer';
 import {
   Shield,
   HelpCircle,
@@ -9,7 +10,6 @@ import {
   Book,
   Video,
   ArrowLeft,
-  Award,
   CheckCircle,
   AlertCircle,
   Lightbulb,
@@ -83,7 +83,7 @@ export default function Support() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -116,7 +116,7 @@ export default function Support() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               How Can We Help?
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Get the help you need with Guardian Shield. Browse our resources, 
               contact support, or check out our documentation.
             </p>
@@ -136,7 +136,7 @@ export default function Support() {
                       <option.icon className="h-6 w-6 text-white" />
                     </div>
                     <CardTitle className="text-lg mb-2">{option.title}</CardTitle>
-                    <CardDescription className="text-sm">{option.description}</CardDescription>
+                    <CardDescription className="text-sm text-justify">{option.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {option.available && (
@@ -157,7 +157,7 @@ export default function Support() {
                   <CardTitle className="text-xl mb-2">Contact Support</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-4 text-justify">
                     Need immediate assistance? Contact our support team.
                   </p>
                   <Button className="w-full gradient-primary" asChild>
@@ -174,7 +174,7 @@ export default function Support() {
                   <CardTitle className="text-xl mb-2">View Documentation</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-4 text-justify">
                     Browse our comprehensive documentation and guides.
                   </p>
                   <Button variant="outline" className="w-full" asChild>
@@ -191,7 +191,7 @@ export default function Support() {
                   <CardTitle className="text-xl mb-2">Report an Issue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-4 text-justify">
                     Found a bug or have a feature request? Let us know.
                   </p>
                   <Button variant="outline" className="w-full" asChild>
@@ -208,7 +208,7 @@ export default function Support() {
             <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="text-2xl mb-2">Frequently Asked Questions</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-justify">
                   Find answers to common questions about Guardian Shield
                 </CardDescription>
               </CardHeader>
@@ -220,7 +220,7 @@ export default function Support() {
                         <Lightbulb className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                         <div>
                           <h3 className="font-semibold mb-2">{faq.question}</h3>
-                          <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                          <p className="text-sm text-muted-foreground text-justify">{faq.answer}</p>
                         </div>
                       </div>
                     </div>
@@ -233,19 +233,7 @@ export default function Support() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

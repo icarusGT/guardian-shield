@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Activity,
@@ -22,7 +23,6 @@ import {
   Linkedin,
   Github,
   Building2,
-  Award,
 } from 'lucide-react';
 
 export default function Home() {
@@ -146,7 +146,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -180,12 +180,12 @@ export default function Home() {
               Guardian Shield
               <span className="block text-primary mt-2">Fraud Detection & Management System</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Comprehensive fraud management system with real-time detection, intelligent case management,
               and streamlined investigation workflows.
             </p>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Developed by <span className="font-semibold text-primary">DataShaak Team</span> from United International University
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto text-justify">
+              Developed by <span className="font-bold text-primary">DataShaak</span> Team from United International University
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="gradient-primary text-lg px-8" asChild>
@@ -224,7 +224,7 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Powerful Features</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-justify">
               Everything you need to detect, investigate, and prevent fraud effectively
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function Home() {
                     <feature.icon className="h-6 w-6 text-white" />
                   </div>
                   <CardTitle className="text-xl mb-2">{feature.title}</CardTitle>
-                  <CardDescription className="text-base">{feature.description}</CardDescription>
+                  <CardDescription className="text-base text-justify">{feature.description}</CardDescription>
                 </CardHeader>
               </Card>
             ))}
@@ -264,14 +264,14 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
               United International University
             </h2>
-            <p className="text-lg text-muted-foreground mb-4">
+            <p className="text-lg text-muted-foreground mb-4 text-justify">
               United International University (UIU) is a leading private university in Bangladesh, 
               committed to excellence in education, research, and innovation. UIU provides a 
               world-class learning environment that nurtures creativity, critical thinking, and 
               technological advancement.
             </p>
-            <p className="text-base text-muted-foreground">
-              The DataShaak team is proud to represent UIU through this innovative fraud detection 
+            <p className="text-base text-muted-foreground text-justify">
+              The <span className="font-bold">DataShaak</span> team is proud to represent UIU through this innovative fraud detection 
               and management system, showcasing the university's commitment to cutting-edge technology 
               and practical problem-solving.
             </p>
@@ -287,8 +287,8 @@ export default function Home() {
               <Users className="h-5 w-5" />
               <span className="text-sm font-medium">Meet Our Team</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">DataShaak Team</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4"><span className="font-bold">DataShaak</span> Team</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-justify">
               A dedicated group of students from United International University working together 
               to build innovative solutions for fraud detection and management.
             </p>
@@ -356,7 +356,7 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-bold mb-6">
                 Why Choose Guardian Shield?
               </h2>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-lg text-muted-foreground mb-8 text-justify">
                 Our comprehensive platform provides everything you need to protect your business
                 from financial fraud and maintain compliance with industry regulations.
               </p>
@@ -430,8 +430,8 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Ready to Protect Your Business?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Experience Guardian Shield by DataShaak - a comprehensive fraud detection and 
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-justify">
+                Experience Guardian Shield by <span className="font-bold">DataShaak</span> - a comprehensive fraud detection and 
                 management system developed by students of United International University.
                 Start your free trial today - no credit card required.
               </p>
@@ -452,125 +452,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-lg gradient-primary">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-lg">Guardian Shield</span>
-                  <span className="text-xs text-muted-foreground">by DataShaak</span>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Advanced fraud management system for modern businesses.
-              </p>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="bg-black p-3 rounded">
-                  <img 
-                    src="/UniversityLogo.png" 
-                    alt="United International University" 
-                    className="h-12 w-auto object-contain"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <GraduationCap className="h-4 w-4" />
-                <span>United International University</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link to="/dashboard" className="hover:text-foreground transition-colors">
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/cases" className="hover:text-foreground transition-colors">
-                    Cases
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/transactions" className="hover:text-foreground transition-colors">
-                    Transactions
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/investigations" className="hover:text-foreground transition-colors">
-                    Investigations
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Team</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link to="/team" className="hover:text-foreground transition-colors">
-                    Meet the Team
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/about" className="hover:text-foreground transition-colors">
-                    About DataShaak
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="hover:text-foreground transition-colors">
-                    Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <a href="https://github.com/datashaak/guardian-shield" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                    GitHub Repository
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">University</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a href="https://www.uiu.ac.bd" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                    UIU Website
-                  </a>
-                </li>
-                <li>
-                  <Link to="/documentation" className="hover:text-foreground transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/support" className="hover:text-foreground transition-colors">
-                    Support
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/privacy" className="hover:text-foreground transition-colors">
-                    Privacy Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-border">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-muted-foreground text-center md:text-left">
-                © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-              </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Award className="h-4 w-4" />
-                <span>Developed at United International University</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

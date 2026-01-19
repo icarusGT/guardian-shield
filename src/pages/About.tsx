@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Building2,
   Users,
   Target,
   Lightbulb,
-  Award,
   ArrowLeft,
   GraduationCap,
   Code,
@@ -60,7 +60,7 @@ export default function About() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -91,9 +91,9 @@ export default function About() {
               <span className="text-sm font-medium">About Us</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              About DataShaak
+              About <span className="font-bold">DataShaak</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               A team of passionate students from United International University dedicated to 
               building innovative solutions for fraud detection and management.
             </p>
@@ -110,19 +110,19 @@ export default function About() {
                 <CardTitle className="text-2xl mb-4">Who We Are</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
-                <p className="text-lg">
-                  DataShaak is a student team from United International University (UIU) that 
+                <p className="text-lg text-justify">
+                  <span className="font-bold">DataShaak</span> is a student team from United International University (UIU) that 
                   specializes in developing cutting-edge software solutions. Our team consists 
                   of talented individuals with diverse skills in full-stack development, 
                   database design, DevOps, and quality assurance.
                 </p>
-                <p>
+                <p className="text-justify">
                   We are passionate about solving real-world problems through technology. 
                   Guardian Shield represents our commitment to creating a comprehensive fraud 
                   detection and management system that helps businesses protect themselves from 
                   financial fraud and maintain compliance with industry regulations.
                 </p>
-                <p>
+                <p className="text-justify">
                   Our team combines academic excellence with practical experience, ensuring that 
                   our solutions are not only technically sound but also user-friendly and 
                   production-ready.
@@ -140,7 +140,7 @@ export default function About() {
                         <value.icon className="h-6 w-6 text-white" />
                       </div>
                       <CardTitle className="text-xl mb-2">{value.title}</CardTitle>
-                      <CardDescription className="text-base">{value.description}</CardDescription>
+                      <CardDescription className="text-base text-justify">{value.description}</CardDescription>
                     </CardHeader>
                   </Card>
                 ))}
@@ -152,7 +152,7 @@ export default function About() {
                 <CardTitle className="text-2xl mb-4">Our Technology Stack</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-muted-foreground mb-4 text-justify">
                   We leverage modern technologies to build robust and scalable solutions:
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -184,7 +184,7 @@ export default function About() {
                       <GraduationCap className="h-5 w-5 text-primary" />
                       <h3 className="text-xl font-bold">United International University</h3>
                     </div>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground text-justify">
                       United International University (UIU) is a leading private university in Bangladesh, 
                       committed to excellence in education, research, and innovation. UIU provides a 
                       world-class learning environment that nurtures creativity, critical thinking, and 
@@ -200,19 +200,7 @@ export default function About() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

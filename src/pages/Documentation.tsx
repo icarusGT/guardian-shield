@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Book,
@@ -9,7 +10,6 @@ import {
   Users,
   Settings,
   ArrowLeft,
-  Award,
   ChevronRight,
   CheckCircle,
 } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function Documentation() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -129,7 +129,7 @@ export default function Documentation() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               Guardian Shield Documentation
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Comprehensive guides and documentation to help you get the most out of 
               Guardian Shield fraud detection and management system.
             </p>
@@ -149,7 +149,7 @@ export default function Documentation() {
                       <section.icon className="h-6 w-6 text-white" />
                     </div>
                     <CardTitle className="text-xl mb-2">{section.title}</CardTitle>
-                    <CardDescription className="text-base">{section.description}</CardDescription>
+                    <CardDescription className="text-base text-justify">{section.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
@@ -175,7 +175,7 @@ export default function Documentation() {
             <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="text-2xl mb-2">Quick Links</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-justify">
                   Access frequently used documentation resources
                 </CardDescription>
               </CardHeader>
@@ -225,19 +225,7 @@ export default function Documentation() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

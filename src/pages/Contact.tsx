@@ -4,14 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Mail,
   MapPin,
-  Phone,
   Send,
   ArrowLeft,
-  Award,
   Linkedin,
   Github,
   Building2,
@@ -30,7 +29,7 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -63,9 +62,9 @@ export default function Contact() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               Contact Us
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Have questions, feedback, or need support? We'd love to hear from you. 
-              Reach out to the DataShaak team and we'll get back to you as soon as possible.
+              Reach out to the <span className="font-bold">DataShaak</span> team and we'll get back to you as soon as possible.
             </p>
           </div>
         </div>
@@ -80,7 +79,7 @@ export default function Contact() {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-2xl mb-2">Send us a Message</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-justify">
                     Fill out the form below and we'll respond as soon as possible.
                   </CardDescription>
                 </CardHeader>
@@ -120,7 +119,7 @@ export default function Contact() {
                 <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="text-2xl mb-2">Contact Information</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-justify">
                       Reach out to us through any of these channels.
                     </CardDescription>
                   </CardHeader>
@@ -205,7 +204,7 @@ export default function Contact() {
                     <CardTitle className="text-xl mb-2">Response Time</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground text-justify">
                       We typically respond within 24-48 hours during business days. 
                       For urgent matters, please mention "URGENT" in your subject line.
                     </p>
@@ -218,19 +217,7 @@ export default function Contact() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

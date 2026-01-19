@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Footer from '@/components/Footer';
 import {
   Shield,
   Lock,
   FileText,
   ArrowLeft,
-  Award,
   Eye,
   Database,
   Users,
@@ -95,7 +95,7 @@ export default function Privacy() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl">Guardian Shield</span>
-                <span className="text-xs text-muted-foreground">by DataShaak</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -128,7 +128,7 @@ export default function Privacy() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               Privacy Policy
             </h1>
-            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Your privacy is important to us. This policy explains how we collect, 
               use, and protect your information when you use Guardian Shield.
             </p>
@@ -148,13 +148,13 @@ export default function Privacy() {
                 <CardTitle className="text-2xl mb-4">Introduction</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
-                <p>
-                  Guardian Shield by DataShaak ("we", "our", or "us") is committed to protecting 
+                <p className="text-justify">
+                  Guardian Shield by <span className="font-bold">DataShaak</span> ("we", "our", or "us") is committed to protecting 
                   your privacy. This Privacy Policy explains how we collect, use, disclose, and 
                   safeguard your information when you use our fraud detection and management 
                   system ("Service").
                 </p>
-                <p>
+                <p className="text-justify">
                   By using Guardian Shield, you agree to the collection and use of information in 
                   accordance with this policy. We will not use or share your information except 
                   as described in this Privacy Policy.
@@ -192,12 +192,12 @@ export default function Privacy() {
                 <CardTitle className="text-2xl mb-4">Cookies and Tracking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
-                <p>
+                <p className="text-justify">
                   We use cookies and similar tracking technologies to track activity on our Service 
                   and hold certain information. Cookies are files with a small amount of data which 
                   may include an anonymous unique identifier.
                 </p>
-                <p>
+                <p className="text-justify">
                   You can instruct your browser to refuse all cookies or to indicate when a cookie 
                   is being sent. However, if you do not accept cookies, you may not be able to use 
                   some portions of our Service.
@@ -210,12 +210,12 @@ export default function Privacy() {
                 <CardTitle className="text-2xl mb-4">Changes to This Privacy Policy</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
-                <p>
+                <p className="text-justify">
                   We may update our Privacy Policy from time to time. We will notify you of any 
                   changes by posting the new Privacy Policy on this page and updating the "Last 
                   updated" date.
                 </p>
-                <p>
+                <p className="text-justify">
                   You are advised to review this Privacy Policy periodically for any changes. 
                   Changes to this Privacy Policy are effective when they are posted on this page.
                 </p>
@@ -230,7 +230,7 @@ export default function Privacy() {
                 </div>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                <p className="mb-4">
+                <p className="mb-4 text-justify">
                   If you have any questions about this Privacy Policy, please contact us:
                 </p>
                 <ul className="space-y-2">
@@ -249,19 +249,7 @@ export default function Privacy() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/50 py-12 mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} Guardian Shield by DataShaak Team. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Award className="h-4 w-4" />
-              <span>Developed at United International University</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
