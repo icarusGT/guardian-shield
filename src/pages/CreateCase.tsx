@@ -23,7 +23,9 @@ export default function CreateCase() {
   const { user, loading, isCustomer, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [loadingCustomer, setLoadingCustomer] = useState(true);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -35,39 +37,68 @@ export default function CreateCase() {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+      return;
     }
     // Only customers and admins can create cases
     if (!loading && user && !isCustomer && !isAdmin) {
       navigate('/dashboard');
+      return;
     }
   }, [user, loading, isCustomer, isAdmin, navigate]);
 
   useEffect(() => {
     const fetchCustomerId = async () => {
-      if (user) {
+      if (!user) return;
+      
+      setLoadingCustomer(true);
+      setError(null);
+
+      try {
         // For customers, get their customer_id
         if (isCustomer) {
-          const { data } = await supabase
+          const { data, error: customerError } = await supabase
             .from('customers')
             .select('customer_id')
             .eq('user_id', user.id)
             .single();
-          if (data) setCustomerId(data.customer_id);
+
+          if (customerError) {
+            throw customerError;
+          }
+
+          if (data) {
+            setCustomerId(data.customer_id);
+          } else {
+            setError('Customer record not found. Please contact support.');
+          }
         } else if (isAdmin) {
-          // For admin, we'll need to handle this differently - maybe show a customer selector
-          // For now, we'll use the first customer as a placeholder
-          // In a real app, you'd want a customer selector
-          const { data } = await supabase
+          // For admin, get the first available customer
+          // In production, you'd want a customer selector dropdown
+          const { data, error: customerError } = await supabase
             .from('customers')
             .select('customer_id')
             .limit(1)
-            .single();
-          if (data) setCustomerId(data.customer_id);
+            .maybeSingle();
+
+          if (customerError) {
+            throw customerError;
+          }
+
+          if (data) {
+            setCustomerId(data.customer_id);
+          } else {
+            setError('No customers found. Please create a customer first.');
+          }
         }
+      } catch (err: any) {
+        console.error('Error fetching customer:', err);
+        setError(err.message || 'Failed to load customer information');
+      } finally {
+        setLoadingCustomer(false);
       }
     };
 
-    if (user) {
+    if (user && (isCustomer || isAdmin)) {
       fetchCustomerId();
     }
   }, [user, isCustomer, isAdmin]);
@@ -115,12 +146,46 @@ export default function CreateCase() {
     }
   };
 
-  if (loading) {
+  if (loading || loadingCustomer) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
-        </AppLayout>
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+            <div className="animate-pulse text-muted-foreground">Loading...</div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/cases">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Create New Case</h1>
+            </div>
+          </div>
+          <Card className="border-destructive">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <CardTitle className="text-destructive">Error</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => navigate('/cases')}>Back to Cases</Button>
+            </CardContent>
+          </Card>
+        </div>
       </AppLayout>
     );
   }
@@ -274,12 +339,21 @@ export default function CreateCase() {
                 </div>
               </div>
 
+              {/* Customer Info (for admin) */}
+              {isAdmin && customerId && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Note:</strong> Creating case for customer ID: {customerId}
+                  </p>
+                </div>
+              )}
+
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button
                   type="submit"
                   className="gradient-primary flex-1"
-                  disabled={submitting || !customerId}
+                  disabled={submitting || !customerId || loadingCustomer}
                 >
                   {submitting ? (
                     <>
