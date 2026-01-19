@@ -23,6 +23,7 @@ import {
   Linkedin,
   Github,
   Building2,
+  Phone,
 } from 'lucide-react';
 
 export default function Home() {
@@ -79,58 +80,44 @@ export default function Home() {
 
   const teamMembers = [
     {
-      name: 'Team Member 1',
-      role: 'Project Lead / Developer',
-      email: 'member1@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Leading the development and architecture of Guardian Shield',
-    },
-    {
-      name: 'Team Member 2',
-      role: 'Full Stack Developer',
-      email: 'member2@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Specialized in frontend and backend integration',
-    },
-    {
-      name: 'Team Member 3',
+      name: 'Shahriar Kabir Saikat',
       role: 'Backend Developer',
-      email: 'member3@student.uiu.ac.bd',
+      email: '0112410092@student.uiu.ac.bd',
+      phone: '0112410092',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Expert in database design and API development',
+      description: 'Expert in backend development and API architecture',
     },
     {
-      name: 'Team Member 4',
+      name: 'Sayeda Sanjida Karim Eisa',
+      role: 'DB Specialist',
+      email: '0112410210@student.uiu.ac.bd',
+      phone: '0112410210',
+      linkedin: '#',
+      github: '#',
+      avatar: '',
+      description: 'Specialized in database design and optimization',
+    },
+    {
+      name: 'Sabiha Akhter',
       role: 'Frontend Developer',
-      email: 'member4@student.uiu.ac.bd',
+      email: '0112410017@student.uiu.ac.bd',
+      phone: '0112410017',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Focused on UI/UX design and user experience',
+      description: 'Focused on frontend development and user interface design',
     },
     {
-      name: 'Team Member 5',
-      role: 'DevOps Engineer',
-      email: 'member5@student.uiu.ac.bd',
+      name: 'Rakibul Hasan Shanto',
+      role: 'Design Specialist',
+      email: '0112410206@student.uiu.ac.bd',
+      phone: '0112410206',
       linkedin: '#',
       github: '#',
       avatar: '',
-      description: 'Managing deployment and infrastructure',
-    },
-    {
-      name: 'Team Member 6',
-      role: 'QA Engineer',
-      email: 'member6@student.uiu.ac.bd',
-      linkedin: '#',
-      github: '#',
-      avatar: '',
-      description: 'Ensuring quality and testing the system',
+      description: 'Expert in UI/UX design and visual communication',
     },
   ];
 
@@ -293,7 +280,7 @@ export default function Home() {
               to build innovative solutions for fraud detection and management.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {teamMembers.map((member, index) => (
               <Card key={index} className="glass-card hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
@@ -308,11 +295,17 @@ export default function Home() {
                     <CardDescription className="text-base font-medium text-primary mb-2">
                       {member.role}
                     </CardDescription>
-                    <p className="text-sm text-muted-foreground mb-4">{member.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <p className="text-sm text-muted-foreground mb-3">{member.description}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                       <GraduationCap className="h-4 w-4" />
                       <span>United International University</span>
                     </div>
+                    {member.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                        <Phone className="h-4 w-4" />
+                        <span>{member.phone}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mt-2">
                       <a
                         href={`mailto:${member.email}`}
