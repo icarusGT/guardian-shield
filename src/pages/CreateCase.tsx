@@ -15,17 +15,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, AlertCircle, Loader2, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
+interface Customer {
+  customer_id: number;
+  user_id: string;
+  full_name?: string;
+  email?: string;
+}
+
 export default function CreateCase() {
-  const { user, loading, isCustomer, isAdmin } = useAuth();
+  const { user, loading, isCustomer, isAdmin, isInvestigator, isAuditor } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [loadingCustomer, setLoadingCustomer] = useState(true);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showCustomerSelector, setShowCustomerSelector] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -39,17 +48,13 @@ export default function CreateCase() {
       navigate('/auth');
       return;
     }
-    // Only customers and admins can create cases
-    if (!loading && user && !isCustomer && !isAdmin) {
-      navigate('/dashboard');
-      return;
-    }
-  }, [user, loading, isCustomer, isAdmin, navigate]);
+    // All authenticated users can create cases
+  }, [user, loading, navigate]);
 
   useEffect(() => {
-    const fetchCustomerId = async () => {
+    const fetchCustomerData = async () => {
       if (!user) return;
-      
+
       setLoadingCustomer(true);
       setError(null);
 
@@ -71,21 +76,47 @@ export default function CreateCase() {
           } else {
             setError('Customer record not found. Please contact support.');
           }
-        } else if (isAdmin) {
-          // For admin, get the first available customer
-          // In production, you'd want a customer selector dropdown
-          const { data, error: customerError } = await supabase
-            .from('customers')
-            .select('customer_id')
-            .limit(1)
-            .maybeSingle();
+        } else {
+          // For Admin, Investigator, and Auditor - fetch list of customers for selection
+          setShowCustomerSelector(true);
 
-          if (customerError) {
-            throw customerError;
+          // Fetch customers with user info
+          const { data: customersData, error: customersError } = await supabase
+            .from('customers')
+            .select('customer_id, user_id')
+            .order('customer_id', { ascending: true });
+
+          if (customersError) {
+            throw customersError;
           }
 
-          if (data) {
-            setCustomerId(data.customer_id);
+          if (customersData && customersData.length > 0) {
+            // Fetch user details for each customer
+            const userIds = customersData.map((c) => c.user_id);
+            const { data: usersData } = await supabase
+              .from('users')
+              .select('user_id, full_name, email')
+              .in('user_id', userIds);
+
+            // Combine customer and user data
+            const customersWithNames = customersData.map((customer) => {
+              const userData = usersData?.find((u) => u.user_id === customer.user_id);
+              return {
+                customer_id: customer.customer_id,
+                user_id: customer.user_id,
+                full_name: userData?.full_name || 'Unknown',
+                email: userData?.email || '',
+              };
+            });
+
+            setCustomers(customersWithNames);
+
+            // Auto-select first customer if available
+            if (customersWithNames.length > 0) {
+              setCustomerId(customersWithNames[0].customer_id);
+            } else {
+              setError('No customers found. Please create a customer first.');
+            }
           } else {
             setError('No customers found. Please create a customer first.');
           }
@@ -98,16 +129,16 @@ export default function CreateCase() {
       }
     };
 
-    if (user && (isCustomer || isAdmin)) {
-      fetchCustomerId();
+    if (user) {
+      fetchCustomerData();
     }
-  }, [user, isCustomer, isAdmin]);
+  }, [user, isCustomer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!customerId) {
-      toast.error('Unable to determine customer. Please try again.');
+      toast.error('Please select a customer for this case.');
       return;
     }
 
@@ -146,6 +177,14 @@ export default function CreateCase() {
     }
   };
 
+  const getRoleName = () => {
+    if (isAdmin) return 'Administrator';
+    if (isInvestigator) return 'Investigator';
+    if (isAuditor) return 'Auditor';
+    if (isCustomer) return 'Customer';
+    return 'User';
+  };
+
   if (loading || loadingCustomer) {
     return (
       <AppLayout>
@@ -159,7 +198,7 @@ export default function CreateCase() {
     );
   }
 
-  if (error) {
+  if (error && !showCustomerSelector) {
     return (
       <AppLayout>
         <div className="max-w-3xl mx-auto space-y-6">
@@ -203,7 +242,9 @@ export default function CreateCase() {
           <div>
             <h1 className="text-3xl font-bold">Create New Case</h1>
             <p className="text-muted-foreground mt-1">
-              Report a new fraud case for investigation
+              {isCustomer
+                ? 'Report a new fraud case for investigation'
+                : `Create a new fraud case as ${getRoleName()}`}
             </p>
           </div>
         </div>
@@ -225,6 +266,54 @@ export default function CreateCase() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Customer Selector (for non-customers) */}
+              {showCustomerSelector && customers.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="customer">
+                    Customer <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={customerId?.toString() || ''}
+                    onValueChange={(value) => setCustomerId(parseInt(value))}
+                  >
+                    <SelectTrigger id="customer">
+                      <SelectValue placeholder="Select a customer">
+                        {customerId &&
+                          (() => {
+                            const selected = customers.find(
+                              (c) => c.customer_id === customerId
+                            );
+                            return selected
+                              ? `${selected.full_name} (${selected.email})`
+                              : 'Select customer';
+                          })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem
+                          key={customer.customer_id}
+                          value={customer.customer_id.toString()}
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium">{customer.full_name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {customer.email} • ID: {customer.customer_id}
+                              </div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the customer this case is associated with
+                  </p>
+                </div>
+              )}
+
               {/* Title */}
               <div className="space-y-2">
                 <Label htmlFor="title">
@@ -334,16 +423,21 @@ export default function CreateCase() {
                     <li>Your case will be reviewed by our investigation team</li>
                     <li>You can upload evidence files after creating the case</li>
                     <li>Case status updates will be visible in your dashboard</li>
-                    <li>An investigator will be assigned to your case shortly</li>
+                    {isInvestigator || isAdmin ? (
+                      <li>You can assign this case to an investigator after creation</li>
+                    ) : (
+                      <li>An investigator will be assigned to your case shortly</li>
+                    )}
                   </ul>
                 </div>
               </div>
 
-              {/* Customer Info (for admin) */}
-              {isAdmin && customerId && (
+              {/* Role-specific note */}
+              {!isCustomer && customerId && (
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> Creating case for customer ID: {customerId}
+                    <strong>Note:</strong> Creating case as {getRoleName()} for customer ID:{' '}
+                    {customerId}
                   </p>
                 </div>
               )}
@@ -383,4 +477,3 @@ export default function CreateCase() {
     </AppLayout>
   );
 }
-

@@ -535,14 +535,12 @@ export default function Dashboard() {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">No cases found</p>
-                {(isCustomer || isAdmin) && (
-                  <Button asChild>
-                    <Link to="/cases/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Case
-                    </Link>
-                  </Button>
-                )}
+                <Button asChild>
+                  <Link to="/cases/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Case
+                  </Link>
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
