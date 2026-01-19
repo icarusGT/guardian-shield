@@ -77,24 +77,48 @@ export default function Transactions() {
   const fetchData = async () => {
     setLoadingData(true);
 
-    // Fetch transactions
-    const { data: txnData } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('occurred_at', { ascending: false })
-      .limit(200);
+    try {
+      // Fetch transactions
+      const { data: txnData, error: txnError } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('occurred_at', { ascending: false })
+        .limit(200);
 
-    if (txnData) setTransactions(txnData as Transaction[]);
+      if (txnError) {
+        console.error('Error fetching transactions:', txnError);
+        // Don't throw - just log and continue with empty array
+      }
 
-    // Fetch suspicious transactions
-    const { data: suspData } = await supabase
-      .from('suspicious_transactions')
-      .select('*')
-      .order('flagged_at', { ascending: false });
+      if (txnData) {
+        setTransactions(txnData as Transaction[]);
+      } else {
+        setTransactions([]);
+      }
 
-    if (suspData) setSuspicious(suspData as SuspiciousTransaction[]);
+      // Fetch suspicious transactions
+      const { data: suspData, error: suspError } = await supabase
+        .from('suspicious_transactions')
+        .select('*')
+        .order('flagged_at', { ascending: false });
 
-    setLoadingData(false);
+      if (suspError) {
+        console.error('Error fetching suspicious transactions:', suspError);
+        // Don't throw - just log and continue with empty array
+      }
+
+      if (suspData) {
+        setSuspicious(suspData as SuspiciousTransaction[]);
+      } else {
+        setSuspicious([]);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching data:', error);
+      setTransactions([]);
+      setSuspicious([]);
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const suspiciousTxnIds = new Set(suspicious.map((s) => s.txn_id));

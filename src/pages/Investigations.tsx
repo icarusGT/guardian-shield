@@ -110,96 +110,161 @@ export default function Investigations() {
   const fetchData = async () => {
     setLoadingData(true);
 
-    // Fetch cases (open and under investigation for workflow)
-    const { data: caseData } = await supabase
-      .from('fraud_cases')
-      .select('case_id, title, category, severity, status, created_at')
-      .in('status', ['OPEN', 'UNDER_INVESTIGATION'])
-      .order('created_at', { ascending: false });
+    try {
+      // Fetch cases (open and under investigation for workflow)
+      const { data: caseData, error: caseError } = await supabase
+        .from('fraud_cases')
+        .select('case_id, title, category, severity, status, created_at')
+        .in('status', ['OPEN', 'UNDER_INVESTIGATION'])
+        .order('created_at', { ascending: false });
 
-    if (caseData) setCases(caseData as FraudCase[]);
+      if (caseError) {
+        console.error('Error fetching cases:', caseError);
+        toast.error(`Failed to load cases: ${caseError.message}`);
+      }
 
-    // Fetch investigators with user names
-    const { data: invData } = await supabase
-      .from('investigators')
-      .select('investigator_id, user_id, badge_no, department, is_available');
+      if (caseData) {
+        setCases(caseData as FraudCase[]);
+      } else {
+        setCases([]);
+      }
 
-    if (invData) {
-      // Get user names
-      const userIds = invData.map((i: any) => i.user_id);
-      const { data: userData } = await supabase
-        .from('users')
-        .select('user_id, full_name')
-        .in('user_id', userIds);
+      // Fetch investigators with user names
+      const { data: invData, error: invError } = await supabase
+        .from('investigators')
+        .select('investigator_id, user_id, badge_no, department, is_available');
 
-      const userMap = new Map((userData || []).map((u: any) => [u.user_id, u.full_name]));
-      setInvestigators(
-        invData.map((i: any) => ({
-          ...i,
-          full_name: userMap.get(i.user_id) || 'Unknown',
-        }))
-      );
+      if (invError) {
+        console.error('Error fetching investigators:', invError);
+        toast.error(`Failed to load investigators: ${invError.message}`);
+      }
+
+      if (invData) {
+        // Get user names
+        const userIds = invData.map((i: any) => i.user_id);
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        if (userError) {
+          console.error('Error fetching user names:', userError);
+        }
+
+        const userMap = new Map((userData || []).map((u: any) => [u.user_id, u.full_name]));
+        setInvestigators(
+          invData.map((i: any) => ({
+            ...i,
+            full_name: userMap.get(i.user_id) || 'Unknown',
+          }))
+        );
+      } else {
+        setInvestigators([]);
+      }
+
+      // Fetch assignments
+      const { data: assignData, error: assignError } = await supabase
+        .from('case_assignments')
+        .select('*')
+        .order('assigned_at', { ascending: false });
+
+      if (assignError) {
+        console.error('Error fetching assignments:', assignError);
+        toast.error(`Failed to load assignments: ${assignError.message}`);
+      }
+
+      if (assignData) {
+        setAssignments(assignData as Assignment[]);
+      } else {
+        setAssignments([]);
+      }
+    } catch (error: any) {
+      console.error('Unexpected error fetching data:', error);
+      toast.error(`Failed to load data: ${error.message || 'Unknown error'}`);
+      setCases([]);
+      setInvestigators([]);
+      setAssignments([]);
+    } finally {
+      setLoadingData(false);
     }
-
-    // Fetch assignments
-    const { data: assignData } = await supabase
-      .from('case_assignments')
-      .select('*')
-      .order('assigned_at', { ascending: false });
-
-    if (assignData) setAssignments(assignData as Assignment[]);
-
-    setLoadingData(false);
   };
 
   const getAssignedInvestigator = (caseId: number) => {
-    const assignment = assignments.find((a) => a.case_id === caseId);
-    if (!assignment) return null;
-    return investigators.find((i) => i.investigator_id === assignment.investigator_id);
+    // Get the most recent assignment for this case
+    const caseAssignments = assignments
+      .filter((a) => a.case_id === caseId)
+      .sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime());
+    
+    if (caseAssignments.length === 0) return null;
+    
+    const latestAssignment = caseAssignments[0];
+    return investigators.find((i) => i.investigator_id === latestAssignment.investigator_id);
   };
 
   const handleAssign = async () => {
-    if (!assignCase || !selectedInvestigator || !user) return;
+    if (!assignCase || !selectedInvestigator || !user) {
+      toast.error('Please select a case and investigator');
+      return;
+    }
+
     setAssigning(true);
 
-    const { error } = await supabase.from('case_assignments').insert({
-      case_id: assignCase.case_id,
-      investigator_id: parseInt(selectedInvestigator),
-      assigned_by_user: user.id,
-      note: assignNote || null,
-    });
+    try {
+      const { error } = await supabase.from('case_assignments').insert({
+        case_id: assignCase.case_id,
+        investigator_id: parseInt(selectedInvestigator),
+        assigned_by_user: user.id,
+        note: assignNote || null,
+      });
 
-    if (error) {
-      toast.error(`Assignment failed: ${error.message}`);
-    } else {
-      toast.success('Investigator assigned successfully');
-      setAssignCase(null);
-      setSelectedInvestigator('');
-      setAssignNote('');
-      fetchData();
+      if (error) {
+        console.error('Assignment error:', error);
+        toast.error(`Assignment failed: ${error.message}`);
+      } else {
+        toast.success('Investigator assigned successfully');
+        setAssignCase(null);
+        setSelectedInvestigator('');
+        setAssignNote('');
+        await fetchData();
+      }
+    } catch (error: any) {
+      console.error('Unexpected error assigning investigator:', error);
+      toast.error(`Failed to assign investigator: ${error.message || 'Unknown error'}`);
+    } finally {
+      setAssigning(false);
     }
-    setAssigning(false);
   };
 
   const handleStatusUpdate = async () => {
-    if (!statusCase || !newStatus) return;
+    if (!statusCase || !newStatus) {
+      toast.error('Please select a case and new status');
+      return;
+    }
+
     setUpdatingStatus(true);
 
-    const { error } = await supabase
-      .from('fraud_cases')
-      .update({ status: newStatus as "OPEN" | "UNDER_INVESTIGATION" | "CLOSED" })
-      .eq('case_id', statusCase.case_id);
+    try {
+      const { error } = await supabase
+        .from('fraud_cases')
+        .update({ status: newStatus as "OPEN" | "UNDER_INVESTIGATION" | "CLOSED" })
+        .eq('case_id', statusCase.case_id);
 
-    if (error) {
-      toast.error(`Status update failed: ${error.message}`);
-    } else {
-      toast.success('Status updated successfully');
-      setStatusCase(null);
-      setNewStatus('');
-      setStatusComment('');
-      fetchData();
+      if (error) {
+        console.error('Status update error:', error);
+        toast.error(`Status update failed: ${error.message}`);
+      } else {
+        toast.success('Status updated successfully');
+        setStatusCase(null);
+        setNewStatus('');
+        setStatusComment('');
+        await fetchData();
+      }
+    } catch (error: any) {
+      console.error('Unexpected error updating status:', error);
+      toast.error(`Failed to update status: ${error.message || 'Unknown error'}`);
+    } finally {
+      setUpdatingStatus(false);
     }
-    setUpdatingStatus(false);
   };
 
   if (loading) {

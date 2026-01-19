@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "migrate:apply": "node apply-migration.js",
+    "migrate:cli": "supabase db push",
+    "migrate:help": "echo See APPLY_FIX_NOW.md for manual migration instructions"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
