@@ -511,22 +511,22 @@ export default function Home() {
               <h3 className="font-semibold mb-4">Team</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#team" className="hover:text-foreground transition-colors">
+                  <Link to="/team" className="hover:text-foreground transition-colors">
                     Meet the Team
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link to="/about" className="hover:text-foreground transition-colors">
                     About DataShaak
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link to="/contact" className="hover:text-foreground transition-colors">
                     Contact Us
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <a href="https://github.com/datashaak/guardian-shield" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
                     GitHub Repository
                   </a>
                 </li>
@@ -541,19 +541,19 @@ export default function Home() {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link to="/documentation" className="hover:text-foreground transition-colors">
                     Documentation
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link to="/support" className="hover:text-foreground transition-colors">
                     Support
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link to="/privacy" className="hover:text-foreground transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

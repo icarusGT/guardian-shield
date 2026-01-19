@@ -14,6 +14,12 @@ import CaseDetail from "./pages/CaseDetail";
 import Transactions from "./pages/Transactions";
 import Users from "./pages/Users";
 import Investigations from "./pages/Investigations";
+import Team from "./pages/Team";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Documentation from "./pages/Documentation";
+import Support from "./pages/Support";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +41,12 @@ const App = () => (
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/users" element={<Users />} />
             <Route path="/investigations" element={<Investigations />} />
+            <Route path="/team" element={<Team />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/documentation" element={<Documentation />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatAssistance />
