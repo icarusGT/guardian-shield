@@ -1,0 +1,6 @@
+RewriteEngine On
+# Let existing files through
+RewriteCond %{REQUEST_FILENAME} !-f
+# Route everything else to the SPA entry point
+RewriteRule ^ index.html [QSA,L]
+

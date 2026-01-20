@@ -1,0 +1,37 @@
+===========================================
+QUICK FIX FOR 500 INTERNAL SERVER ERROR
+===========================================
+
+IMMEDIATE STEPS:
+
+1. DELETE the current .htaccess file from your cPanel
+
+2. Upload the NEW .htaccess file from the zip (the simple one)
+
+3. OR create a new .htaccess with this content:
+   ----------------------------
+   RewriteEngine On
+   RewriteCond %{REQUEST_FILENAME} !-f
+   RewriteRule ^ index.html [QSA,L]
+   ----------------------------
+
+4. Set file permissions:
+   - Files: 644
+   - Folders: 755
+
+5. Test your website
+
+IF STILL NOT WORKING:
+
+1. Rename .htaccess to .htaccess-backup
+2. Test if homepage loads (yoursite.com)
+3. If homepage works, the issue is .htaccess
+4. Try .htaccess-minimal file instead
+5. Check cPanel Error Logs for exact error
+
+MOST COMMON FIX:
+Use the minimal .htaccess file included in the zip.
+
+===========================================
+
+
