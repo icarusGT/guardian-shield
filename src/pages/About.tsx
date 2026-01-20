@@ -15,6 +15,7 @@ import {
   Database,
   Zap,
   Lock,
+  Award,
 } from 'lucide-react';
 
 export default function About() {
