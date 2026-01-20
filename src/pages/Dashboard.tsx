@@ -441,8 +441,8 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-            <Link to="/cases">
+          <Link to="/cases" className="block">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10">
@@ -454,12 +454,12 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardHeader>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
 
           {(isAdmin || isInvestigator) && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-              <Link to="/investigations">
+            <Link to="/investigations" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-blue-500/10">
@@ -471,13 +471,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </CardHeader>
-              </Link>
-            </Card>
+              </Card>
+            </Link>
           )}
 
           {(isAdmin || isAuditor || isInvestigator) && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-              <Link to="/transactions">
+            <Link to="/transactions" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-green-500/10">
@@ -489,13 +489,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </CardHeader>
-              </Link>
-            </Card>
+              </Card>
+            </Link>
           )}
 
           {isAdmin && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-              <Link to="/users">
+            <Link to="/users" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-purple-500/10">
@@ -507,8 +507,8 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </CardHeader>
-              </Link>
-            </Card>
+              </Card>
+            </Link>
           )}
         </div>
 
