@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚀 APPLY MIGRATION NOW - Choose Your Method
 
 ## ⚡ METHOD 1: Supabase Dashboard (RECOMMENDED - 2 Minutes)

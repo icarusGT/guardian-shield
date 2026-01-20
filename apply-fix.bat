@@ -1,4 +1,5 @@
 @echo off
+REM Last updated: 20th January 2025
 echo ============================================================================
 echo RLS Infinite Recursion Fix - Application Script
 echo ============================================================================

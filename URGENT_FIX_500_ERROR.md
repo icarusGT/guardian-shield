@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚨 URGENT: Fix 500 Errors - Apply RLS Fix Migration
 
 ## 🔴 Current Problem

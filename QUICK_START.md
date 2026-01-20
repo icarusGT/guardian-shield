@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # ⚡ Quick Start - Apply Migrations
 
 ## 🎯 You Need to Apply 2 Migrations

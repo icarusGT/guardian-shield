@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Last updated: 20th January 2025
 
 /**
  * Automatic Migration Application Script

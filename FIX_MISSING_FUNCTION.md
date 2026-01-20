@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🔧 Fix: Missing `current_role_id` Function
 
 ## ✅ Current Status

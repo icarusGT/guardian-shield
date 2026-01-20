@@ -1,4 +1,5 @@
 @echo off
+REM Last updated: 20th January 2025
 REM Automatic Migration Application Script (CLI Method for Windows)
 REM This script uses Supabase CLI to apply the migration
 

@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚨 URGENT: Apply RLS Fix NOW - Step by Step
 
 ## You're Still Getting the Error Because Migration Wasn't Applied!

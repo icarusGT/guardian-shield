@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # Welcome to your Lovable project
 
 ## Project info

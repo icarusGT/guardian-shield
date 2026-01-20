@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚀 Automatic Migration Application
 
 This guide shows you how to automatically apply the RLS fix migration to your Supabase database.

@@ -1,3 +1,4 @@
+-- Last updated: 20th January 2025
 -- =========================================================
 -- ONLINE FRAUD MANAGEMENT SYSTEM (Supabase/PostgreSQL)
 -- FINAL CLEAN RUNNABLE SCRIPT (RUN ONCE)

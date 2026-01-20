@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚀 Apply Migration - Simple Guide
 
 ## ⚡ FASTEST METHOD (2 Minutes)

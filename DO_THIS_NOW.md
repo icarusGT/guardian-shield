@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚨 DO THIS NOW - Apply Base Schema Migration
 
 ## ✅ Current Status

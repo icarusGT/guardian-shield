@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚀 Apply All Migrations - Complete Setup
 
 ## ⚠️ Important: Run Migrations in Order!

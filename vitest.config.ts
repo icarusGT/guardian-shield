@@ -1,3 +1,4 @@
+// Last updated: 20th January 2025
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";

@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚀 Apply RLS Infinite Recursion Fix
 
 ## Quick Fix (2 Minutes)

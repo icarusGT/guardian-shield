@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # Quick Fix Guide - RLS Infinite Recursion
 
 ## The Problem

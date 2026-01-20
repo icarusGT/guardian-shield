@@ -1,3 +1,4 @@
+// Last updated: 20th January 2025
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;

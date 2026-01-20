@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # RLS Infinite Recursion Fix - Complete Deep Solution
 
 ## Problem

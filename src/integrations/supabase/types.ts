@@ -1,3 +1,4 @@
+// Last updated: 20th January 2025
 export type Json =
   | string
   | number

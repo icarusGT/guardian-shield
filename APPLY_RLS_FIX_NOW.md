@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🔧 Apply RLS Fix Migration NOW
 
 ## ✅ Current Status

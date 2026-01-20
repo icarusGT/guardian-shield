@@ -1,4 +1,5 @@
 #!/bin/bash
+# Last updated: 20th January 2025
 
 # Automatic Migration Application Script (CLI Method)
 # This script uses Supabase CLI to apply the migration

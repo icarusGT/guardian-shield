@@ -1,3 +1,4 @@
+<!-- Last updated: 20th January 2025 -->
 # 🚨 URGENT: Fix Infinite Recursion Error NOW
 
 ## ⚠️ You're Still Getting the Error Because Migration Wasn't Applied!
