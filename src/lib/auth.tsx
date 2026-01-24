@@ -63,9 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    // SECURITY: Use users_safe view to exclude password_hash column
     const { data, error } = await supabase
-      .from('users')
-      .select('*')
+      .from('users_safe')
+      .select('user_id, email, full_name, role_id, is_active, is_locked')
       .eq('user_id', userId)
       .maybeSingle();
 

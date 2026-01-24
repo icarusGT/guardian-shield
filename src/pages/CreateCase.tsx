@@ -93,9 +93,10 @@ export default function CreateCase() {
 
           if (customersData && customersData.length > 0) {
             // Fetch user details for each customer
+            // SECURITY: Use users_safe view to exclude password_hash column
             const userIds = customersData.map((c) => c.user_id);
             const { data: usersData } = await supabase
-              .from('users')
+              .from('users_safe')
               .select('user_id, full_name, email')
               .in('user_id', userIds);
 
