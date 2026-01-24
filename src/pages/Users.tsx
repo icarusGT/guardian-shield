@@ -81,9 +81,10 @@ export default function Users() {
 
   const fetchUsers = async () => {
     setLoadingData(true);
+    // SECURITY: Use users_safe view to exclude password_hash column
     const { data, error } = await supabase
-      .from('users')
-      .select('*')
+      .from('users_safe')
+      .select('user_id, full_name, email, phone, role_id, is_active, is_locked, locked_until, created_at')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
