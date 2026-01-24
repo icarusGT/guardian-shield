@@ -87,6 +87,13 @@ export type Database = {
             foreignKeyName: "case_assignments_assigned_by_user_fkey"
             columns: ["assigned_by_user"]
             isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "case_assignments_assigned_by_user_fkey"
+            columns: ["assigned_by_user"]
+            isOneToOne: false
             referencedRelation: "v_case_assigned_investigator"
             referencedColumns: ["investigator_user_id"]
           },
@@ -218,6 +225,13 @@ export type Database = {
             foreignKeyName: "customers_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "v_case_assigned_investigator"
             referencedColumns: ["investigator_user_id"]
           },
@@ -270,6 +284,13 @@ export type Database = {
             foreignKeyName: "evidence_files_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "evidence_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
             referencedRelation: "v_case_assigned_investigator"
             referencedColumns: ["investigator_user_id"]
           },
@@ -315,6 +336,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "fraud_cases_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
             referencedColumns: ["customer_id"]
           },
         ]
@@ -389,6 +417,13 @@ export type Database = {
             foreignKeyName: "investigators_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "investigators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "v_case_assigned_investigator"
             referencedColumns: ["investigator_user_id"]
           },
@@ -422,6 +457,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "login_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
             referencedColumns: ["user_id"]
           },
           {
@@ -516,6 +558,13 @@ export type Database = {
             referencedRelation: "customers"
             referencedColumns: ["customer_id"]
           },
+          {
+            foreignKeyName: "transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["customer_id"]
+          },
         ]
       }
       users: {
@@ -567,6 +616,52 @@ export type Database = {
       }
     }
     Views: {
+      customers_safe: {
+        Row: {
+          created_at: string | null
+          customer_id: number | null
+          home_location: string | null
+          nid_number: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: number | null
+          home_location?: string | null
+          nid_number?: never
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: number | null
+          home_location?: string | null
+          nid_number?: never
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "v_case_assigned_investigator"
+            referencedColumns: ["investigator_user_id"]
+          },
+        ]
+      }
       kpi_case_success: {
         Row: {
           avg_close_hours: number | null
@@ -577,6 +672,50 @@ export type Database = {
           under_investigation_cases: number | null
         }
         Relationships: []
+      }
+      users_safe: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          is_active: boolean | null
+          is_locked: boolean | null
+          locked_until: string | null
+          phone: string | null
+          role_id: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          is_active?: boolean | null
+          is_locked?: boolean | null
+          locked_until?: string | null
+          phone?: string | null
+          role_id?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          is_active?: boolean | null
+          is_locked?: boolean | null
+          locked_until?: string | null
+          phone?: string | null
+          role_id?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["role_id"]
+          },
+        ]
       }
       v_case_assigned_investigator: {
         Row: {
