@@ -14,6 +14,7 @@ import {
   Settings,
   ClipboardList,
   Terminal,
+  Database,
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -79,6 +80,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 >
                   <Terminal className="h-4 w-4" />
                   Query Debugger
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link 
+                  to="/database-schema" 
+                  className={cn(
+                    "flex items-center gap-2",
+                    location.pathname === '/database-schema' && "bg-accent"
+                  )}
+                >
+                  <Database className="h-4 w-4" />
+                  Database Schema
                 </Link>
               </Button>
               <Button variant="ghost" asChild>

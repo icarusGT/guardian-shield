@@ -22,6 +22,7 @@ import Documentation from "./pages/Documentation";
 import Support from "./pages/Support";
 import Privacy from "./pages/Privacy";
 import QueryDebugger from "./pages/QueryDebugger";
+import DatabaseSchema from "./pages/DatabaseSchema";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/query-debugger" element={<QueryDebugger />} />
+            <Route path="/database-schema" element={<DatabaseSchema />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatAssistance />
