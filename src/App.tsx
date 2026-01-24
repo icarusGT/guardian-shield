@@ -13,6 +13,7 @@ import Cases from "./pages/Cases";
 import CreateCase from "./pages/CreateCase";
 import CaseDetail from "./pages/CaseDetail";
 import Transactions from "./pages/Transactions";
+import CreateTransaction from "./pages/CreateTransaction";
 import Users from "./pages/Users";
 import Investigations from "./pages/Investigations";
 import Team from "./pages/Team";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/cases/new" element={<CreateCase />} />
             <Route path="/cases/:caseId" element={<CaseDetail />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/transactions/new" element={<CreateTransaction />} />
             <Route path="/users" element={<Users />} />
             <Route path="/investigations" element={<Investigations />} />
             <Route path="/team" element={<Team />} />
