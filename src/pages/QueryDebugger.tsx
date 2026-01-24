@@ -1,7 +1,5 @@
 // Last updated: 20th January 2025
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/auth';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,20 +105,12 @@ const PRESET_QUERIES = [
 ];
 
 export default function QueryDebugger() {
-  const { user, loading, isAdmin, isAuditor } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [query, setQuery] = useState('');
   const [queryType, setQueryType] = useState<'select' | 'insert' | 'update' | 'delete' | 'rpc' | 'custom'>('select');
   const [executions, setExecutions] = useState<QueryExecution[]>([]);
   const [currentExecution, setCurrentExecution] = useState<QueryExecution | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
 
   const detectQueryType = (queryText: string): 'select' | 'insert' | 'update' | 'delete' | 'rpc' | 'custom' => {
     const trimmed = queryText.trim().toUpperCase();
@@ -411,29 +401,6 @@ export default function QueryDebugger() {
     setCurrentExecution(null);
   };
 
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Restrict access to admin and auditor only
-  if (!isAdmin && !isAuditor) {
-    return (
-      <AppLayout>
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>You need administrator or auditor privileges to access the query debugger.</CardDescription>
-          </CardHeader>
-        </Card>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout>

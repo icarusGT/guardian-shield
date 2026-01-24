@@ -54,9 +54,97 @@ export default function AppLayout({ children }: AppLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header Menu */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg gradient-primary">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg">Guardian Shield</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
+              </div>
+            </div>
+            <nav className="flex items-center gap-2">
+              <Button variant="ghost" asChild>
+                <Link 
+                  to="/query-debugger" 
+                  className={cn(
+                    "flex items-center gap-2",
+                    location.pathname === '/query-debugger' && "bg-accent"
+                  )}
+                >
+                  <Terminal className="h-4 w-4" />
+                  Query Debugger
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link 
+                  to="/dashboard"
+                  className={cn(
+                    location.pathname === '/dashboard' && "bg-accent"
+                  )}
+                >
+                  Dashboard
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link 
+                  to="/cases"
+                  className={cn(
+                    location.pathname.startsWith('/cases') && "bg-accent"
+                  )}
+                >
+                  Cases
+                </Link>
+              </Button>
+              {(profile?.role_id === 1 || profile?.role_id === 2 || profile?.role_id === 3) && (
+                <Button variant="ghost" asChild>
+                  <Link 
+                    to="/transactions"
+                    className={cn(
+                      location.pathname === '/transactions' && "bg-accent"
+                    )}
+                  >
+                    Transactions
+                  </Link>
+                </Button>
+              )}
+              {profile?.role_id === 1 && (
+                <Button variant="ghost" asChild>
+                  <Link 
+                    to="/users"
+                    className={cn(
+                      location.pathname === '/users' && "bg-accent"
+                    )}
+                  >
+                    Users
+                  </Link>
+                </Button>
+              )}
+              {(profile?.role_id === 1 || profile?.role_id === 2) && (
+                <Button variant="ghost" asChild>
+                  <Link 
+                    to="/investigations"
+                    className={cn(
+                      location.pathname === '/investigations' && "bg-accent"
+                    )}
+                  >
+                    Investigations
+                  </Link>
+                </Button>
+              )}
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-sidebar-primary">
@@ -113,10 +201,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

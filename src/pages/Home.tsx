@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/lib/auth';
 import {
   Shield,
   Activity,
@@ -25,9 +26,11 @@ import {
   Github,
   Building2,
   Phone,
+  Terminal,
 } from 'lucide-react';
 
 export default function Home() {
+  const { user, isAdmin, isAuditor } = useAuth();
   const features = [
     {
       icon: Shield,
@@ -139,11 +142,25 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" asChild>
-                <Link to="/auth">Sign In</Link>
+                <Link to="/query-debugger" className="flex items-center gap-2">
+                  <Terminal className="h-4 w-4" />
+                  Query Debugger
+                </Link>
               </Button>
-              <Button className="gradient-primary" asChild>
-                <Link to="/auth">Get Started</Link>
-              </Button>
+              {!user ? (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                  <Button className="gradient-primary" asChild>
+                    <Link to="/auth">Get Started</Link>
+                  </Button>
+                </>
+              ) : (
+                <Button className="gradient-primary" asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
