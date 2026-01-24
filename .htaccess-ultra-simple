@@ -2,3 +2,4 @@ RewriteEngine On
 RewriteRule ^(?!.*\.).*$ index.html [L]
 
 
+

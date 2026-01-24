@@ -13,6 +13,7 @@ import {
   LogOut,
   Settings,
   ClipboardList,
+  Terminal,
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },
   { name: 'Users', href: '/users', icon: Users, roles: [1] },
   { name: 'Investigations', href: '/investigations', icon: ClipboardList, roles: [1, 2] },
+  { name: 'Query Debugger', href: '/query-debugger', icon: Terminal, roles: [1, 3] },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
