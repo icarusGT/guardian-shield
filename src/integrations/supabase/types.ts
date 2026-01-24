@@ -615,6 +615,7 @@ export type Database = {
         Args: { p_ip: string; p_user_id: string }
         Returns: undefined
       }
+      user_owns_customer: { Args: { p_customer_id: number }; Returns: boolean }
     }
     Enums: {
       audit_action: "INSERT" | "UPDATE" | "DELETE"
