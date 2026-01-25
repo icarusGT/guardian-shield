@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import TransactionFeedbackForm, { TransactionFeedbackList } from '@/components/feedback/TransactionFeedbackForm';
+import TransactionDecisionForm, { TransactionDecisionList } from '@/components/decisions/TransactionDecisionForm';
 import { Activity, Search, AlertTriangle } from 'lucide-react';
 
 interface Transaction {
@@ -46,6 +47,17 @@ interface TransactionFeedback {
   investigator_id: number;
 }
 
+interface TransactionDecision {
+  decision_id: number;
+  txn_id: number;
+  category: string;
+  status: string;
+  customer_message: string | null;
+  internal_notes: string | null;
+  created_at: string;
+  admin_user_id: string;
+}
+
 const riskColors: Record<string, string> = {
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
@@ -68,6 +80,7 @@ export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [suspicious, setSuspicious] = useState<SuspiciousTransaction[]>([]);
   const [transactionFeedback, setTransactionFeedback] = useState<TransactionFeedback[]>([]);
+  const [transactionDecisions, setTransactionDecisions] = useState<TransactionDecision[]>([]);
   const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState('');
@@ -138,6 +151,16 @@ export default function Transactions() {
         setTransactionFeedback(feedbackData as TransactionFeedback[]);
       }
 
+      // Fetch transaction decisions (admin final decisions)
+      const { data: decisionsData, error: decisionsError } = await supabase
+        .from('transaction_decisions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!decisionsError && decisionsData) {
+        setTransactionDecisions(decisionsData as TransactionDecision[]);
+      }
+
       // Fetch my investigator ID if I'm an investigator
       if (isInvestigator && user) {
         const { data: invData } = await supabase
@@ -162,6 +185,7 @@ export default function Transactions() {
   const suspiciousTxnIds = new Set(suspicious.map((s) => s.txn_id));
   const getSuspiciousInfo = (txnId: number) => suspicious.find((s) => s.txn_id === txnId);
   const getTxnFeedback = (txnId: number) => transactionFeedback.filter((f) => f.txn_id === txnId);
+  const getTxnDecisions = (txnId: number) => transactionDecisions.filter((d) => d.txn_id === txnId);
 
   const filteredTransactions = transactions.filter((t) => {
     const matchesSearch =
@@ -306,7 +330,7 @@ export default function Transactions() {
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Location</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Time</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Risk</th>
-                      {isInvestigator && (
+                      {(isInvestigator || isAdmin) && (
                         <th className="text-left py-3 px-4 font-medium text-muted-foreground">Action</th>
                       )}
                     </tr>
@@ -315,6 +339,7 @@ export default function Transactions() {
                     {filteredTransactions.map((t) => {
                       const suspInfo = getSuspiciousInfo(t.txn_id);
                       const txnFeedback = getTxnFeedback(t.txn_id);
+                      const txnDecisions = getTxnDecisions(t.txn_id);
                       return (
                         <tr
                           key={t.txn_id}
@@ -347,20 +372,29 @@ export default function Transactions() {
                                   </span>
                                 )}
                                 <TransactionFeedbackList txnId={t.txn_id} feedback={txnFeedback} />
+                                <TransactionDecisionList decisions={txnDecisions} showInternalNotes={isAdmin} />
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-sm">—</span>
                             )}
                           </td>
-                          {isInvestigator && (
+                          {(isInvestigator || isAdmin) && (
                             <td className="py-3 px-4">
-                              {suspInfo && myInvestigatorId && (
-                                <TransactionFeedbackForm
-                                  txnId={t.txn_id}
-                                  investigatorId={myInvestigatorId}
-                                  onFeedbackSubmitted={fetchData}
-                                />
-                              )}
+                              <div className="flex items-center gap-1">
+                                {isInvestigator && suspInfo && myInvestigatorId && (
+                                  <TransactionFeedbackForm
+                                    txnId={t.txn_id}
+                                    investigatorId={myInvestigatorId}
+                                    onFeedbackSubmitted={fetchData}
+                                  />
+                                )}
+                                {isAdmin && suspInfo && (
+                                  <TransactionDecisionForm
+                                    txnId={t.txn_id}
+                                    onDecisionSubmitted={fetchData}
+                                  />
+                                )}
+                              </div>
                             </td>
                           )}
                         </tr>
