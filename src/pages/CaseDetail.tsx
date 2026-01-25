@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFeedbackForm';
+import CaseDecisionForm, { CaseDecisionList } from '@/components/decisions/CaseDecisionForm';
 import {
   ArrowLeft,
   FileText,
@@ -20,6 +21,7 @@ import {
   FileImage,
   FileIcon,
   MessageSquare,
+  Gavel,
 } from 'lucide-react';
 
 interface FraudCase {
@@ -58,6 +60,16 @@ interface CaseFeedback {
   investigator_id: number;
 }
 
+interface CaseDecision {
+  decision_id: number;
+  category: string;
+  status: string;
+  customer_message: string | null;
+  internal_notes: string | null;
+  created_at: string;
+  admin_user_id: string;
+}
+
 interface AssignedInvestigator {
   investigator_id: number;
   investigator_name: string | null;
@@ -90,6 +102,7 @@ export default function CaseDetail() {
   const [history, setHistory] = useState<CaseHistory[]>([]);
   const [investigator, setInvestigator] = useState<AssignedInvestigator | null>(null);
   const [caseFeedback, setCaseFeedback] = useState<CaseFeedback[]>([]);
+  const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
   const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -164,6 +177,17 @@ export default function CaseDetail() {
 
     if (feedbackResult) {
       setCaseFeedback(feedbackResult as unknown as CaseFeedback[]);
+    }
+
+    // Fetch case decisions (admin final decisions)
+    const { data: decisionsResult } = await supabase
+      .from('case_decisions')
+      .select('*')
+      .eq('case_id', parseInt(caseId))
+      .order('created_at', { ascending: false });
+
+    if (decisionsResult) {
+      setCaseDecisions(decisionsResult as unknown as CaseDecision[]);
     }
 
     // Fetch my investigator ID if I'm an investigator
@@ -465,6 +489,27 @@ export default function CaseDetail() {
                 </CardHeader>
                 <CardContent>
                   <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Admin Final Decision Section */}
+            {isAdmin && caseId && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Gavel className="h-4 w-4" />
+                      Admin Decision
+                    </CardTitle>
+                    <CaseDecisionForm
+                      caseId={parseInt(caseId)}
+                      onDecisionSubmitted={fetchCaseData}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CaseDecisionList decisions={caseDecisions} showInternalNotes={true} />
                 </CardContent>
               </Card>
             )}

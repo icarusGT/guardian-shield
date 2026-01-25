@@ -120,6 +120,50 @@ export type Database = {
           },
         ]
       }
+      case_decisions: {
+        Row: {
+          admin_user_id: string
+          case_id: number
+          category: Database["public"]["Enums"]["decision_category"]
+          created_at: string
+          customer_message: string | null
+          decision_id: number
+          internal_notes: string | null
+          status: Database["public"]["Enums"]["decision_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          case_id: number
+          category: Database["public"]["Enums"]["decision_category"]
+          created_at?: string
+          customer_message?: string | null
+          decision_id?: never
+          internal_notes?: string | null
+          status?: Database["public"]["Enums"]["decision_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          case_id?: number
+          category?: Database["public"]["Enums"]["decision_category"]
+          created_at?: string
+          customer_message?: string | null
+          decision_id?: never
+          internal_notes?: string | null
+          status?: Database["public"]["Enums"]["decision_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_decisions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "fraud_cases"
+            referencedColumns: ["case_id"]
+          },
+        ]
+      }
       case_feedback: {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_status"]
@@ -580,6 +624,50 @@ export type Database = {
           },
         ]
       }
+      transaction_decisions: {
+        Row: {
+          admin_user_id: string
+          category: Database["public"]["Enums"]["decision_category"]
+          created_at: string
+          customer_message: string | null
+          decision_id: number
+          internal_notes: string | null
+          status: Database["public"]["Enums"]["decision_status"]
+          txn_id: number
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          category: Database["public"]["Enums"]["decision_category"]
+          created_at?: string
+          customer_message?: string | null
+          decision_id?: never
+          internal_notes?: string | null
+          status?: Database["public"]["Enums"]["decision_status"]
+          txn_id: number
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          category?: Database["public"]["Enums"]["decision_category"]
+          created_at?: string
+          customer_message?: string | null
+          decision_id?: never
+          internal_notes?: string | null
+          status?: Database["public"]["Enums"]["decision_status"]
+          txn_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_decisions_txn_id_fkey"
+            columns: ["txn_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["txn_id"]
+          },
+        ]
+      }
       transaction_feedback: {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_status"]
@@ -883,6 +971,14 @@ export type Database = {
         | "SCAM"
         | "OTHER"
       case_status: "OPEN" | "UNDER_INVESTIGATION" | "CLOSED"
+      decision_category:
+        | "FRAUD_CONFIRMED"
+        | "CLEARED"
+        | "PARTIAL_FRAUD"
+        | "INVESTIGATION_ONGOING"
+        | "INSUFFICIENT_EVIDENCE"
+        | "REFERRED_TO_AUTHORITIES"
+      decision_status: "DRAFT" | "FINAL" | "COMMUNICATED"
       evidence_type: "SCREENSHOT" | "PDF" | "TRANSACTION_LOG" | "OTHER"
       feedback_category:
         | "CONFIRMED_FRAUD"
@@ -1030,6 +1126,15 @@ export const Constants = {
         "OTHER",
       ],
       case_status: ["OPEN", "UNDER_INVESTIGATION", "CLOSED"],
+      decision_category: [
+        "FRAUD_CONFIRMED",
+        "CLEARED",
+        "PARTIAL_FRAUD",
+        "INVESTIGATION_ONGOING",
+        "INSUFFICIENT_EVIDENCE",
+        "REFERRED_TO_AUTHORITIES",
+      ],
+      decision_status: ["DRAFT", "FINAL", "COMMUNICATED"],
       evidence_type: ["SCREENSHOT", "PDF", "TRANSACTION_LOG", "OTHER"],
       feedback_category: [
         "CONFIRMED_FRAUD",
