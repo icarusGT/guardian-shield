@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 25th January 2025
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -7,6 +7,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import FraudHotspotsAnalytics from '@/components/analytics/FraudHotspotsAnalytics';
 import {
   Shield,
   FileWarning,
@@ -436,8 +437,11 @@ export default function Dashboard() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+        </Card>
         )}
+
+        {/* Fraud Hotspots Analytics - Admin Only */}
+        {isAdmin && <FraudHotspotsAnalytics />}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
