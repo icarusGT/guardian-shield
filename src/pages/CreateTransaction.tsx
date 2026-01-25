@@ -26,6 +26,7 @@ export default function CreateTransaction() {
   const [formData, setFormData] = useState({
     txn_amount: '',
     txn_location: '',
+    recipient_account: '',
     txn_channel: 'OTHER' as 'BKASH' | 'NAGAD' | 'CARD' | 'BANK' | 'CASH' | 'OTHER',
   });
 
@@ -120,6 +121,7 @@ export default function CreateTransaction() {
         customer_id: customerId,
         txn_amount: parseFloat(formData.txn_amount),
         txn_location: formData.txn_location || null,
+        recipient_account: formData.recipient_account || null,
         txn_channel: formData.txn_channel,
       });
 
@@ -206,6 +208,19 @@ export default function CreateTransaction() {
                     <SelectItem value="OTHER">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recipient_account">Recipient Account/Number</Label>
+                <Input
+                  id="recipient_account"
+                  type="text"
+                  placeholder="Enter recipient phone/account number"
+                  value={formData.recipient_account}
+                  onChange={(e) =>
+                    setFormData({ ...formData, recipient_account: e.target.value })
+                  }
+                />
               </div>
 
               <div className="space-y-2">

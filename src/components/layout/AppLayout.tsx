@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import HighRiskAlerts from '@/components/notifications/HighRiskAlerts';
 import {
   Shield,
   LayoutDashboard,
@@ -221,6 +222,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
         </main>
       </div>
+
+      {/* Real-time HIGH risk alerts for admins */}
+      <HighRiskAlerts />
     </div>
   );
 }
