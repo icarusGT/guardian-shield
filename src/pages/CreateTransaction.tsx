@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Send, DollarSign } from 'lucide-react';
 
 export default function CreateTransaction() {
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,6 +29,13 @@ export default function CreateTransaction() {
     txn_channel: 'OTHER' as 'BKASH' | 'NAGAD' | 'CARD' | 'BANK' | 'CASH' | 'OTHER',
   });
 
+  // Avoid navigation side-effects during render
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -37,9 +44,46 @@ export default function CreateTransaction() {
     );
   }
 
-  if (!user) {
-    navigate('/auth');
-    return null;
+  if (!user) return null;
+
+  // Wait for profile (RBAC) to load
+  if (!profile) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Loading your profile…</CardTitle>
+              <CardDescription>Please wait a moment.</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // This page is only for customers. Investigators/admins/auditors shouldn't hit the customer lookup.
+  if (profile.role_id !== 4) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Access restricted</CardTitle>
+              <CardDescription>
+                Transaction requests can only be submitted by customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex gap-3">
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                Go back
+              </Button>
+              <Button onClick={() => navigate('/transactions')}>Go to Transactions</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,18 +102,22 @@ export default function CreateTransaction() {
 
     try {
       // Get the customer_id from customers table using auth user id
-      const { data: customerData, error: customerError } = await supabase
+      // IMPORTANT: Avoid `.single()` here because it returns a 406 error when 0 rows are found.
+      const { data: customerRows, error: customerError } = await supabase
         .from('customers')
         .select('customer_id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1);
 
-      if (customerError || !customerData) {
+      if (customerError) throw customerError;
+
+      const customerId = customerRows?.[0]?.customer_id;
+      if (!customerId) {
         throw new Error('Could not find your customer profile. Please contact support.');
       }
 
       const { error } = await supabase.from('transactions').insert({
-        customer_id: customerData.customer_id,
+        customer_id: customerId,
         txn_amount: parseFloat(formData.txn_amount),
         txn_location: formData.txn_location || null,
         txn_channel: formData.txn_channel,
