@@ -93,7 +93,7 @@ export default function FraudHotspotsAnalytics() {
       // Fetch corresponding transactions
       const { data: txnData, error: txnError } = await supabase
         .from('transactions')
-        .select('txn_id, txn_channel, txn_amount, txn_location')
+        .select('txn_id, txn_channel, txn_amount, txn_location, recipient_account')
         .in('txn_id', txnIds);
 
       if (txnError) {
@@ -135,14 +135,15 @@ export default function FraudHotspotsAnalytics() {
 
       setChannelStats(channelStatsArray);
 
-      // B) Top Recipients (using txn_location as recipient identifier)
+      // B) Top Recipients (using recipient_account field, fallback to txn_location)
       const recipientMap = new Map<string, { count: number; totalScore: number; totalAmount: number; riskLevels: string[] }>();
 
       suspData.forEach((susp) => {
         const txn = txnMap.get(susp.txn_id);
         if (!txn) return;
 
-        const recipient = txn.txn_location || 'Unknown';
+        // Prefer recipient_account, fallback to txn_location
+        const recipient = (txn as any).recipient_account || txn.txn_location || 'Unknown';
         const existing = recipientMap.get(recipient) || { count: 0, totalScore: 0, totalAmount: 0, riskLevels: [] };
 
         recipientMap.set(recipient, {
@@ -301,10 +302,10 @@ export default function FraudHotspotsAnalytics() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
-              <CardTitle>Top Flagged Recipients/Locations</CardTitle>
+              <CardTitle>Top Flagged Recipients</CardTitle>
             </div>
             <CardDescription>
-              Recipients/locations with the most suspicious transactions
+              Recipient accounts with the most suspicious transactions
             </CardDescription>
           </CardHeader>
           <CardContent>

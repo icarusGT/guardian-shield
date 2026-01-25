@@ -529,6 +529,7 @@ export type Database = {
         Row: {
           customer_id: number
           occurred_at: string
+          recipient_account: string | null
           txn_amount: number
           txn_channel: Database["public"]["Enums"]["txn_channel"]
           txn_id: number
@@ -537,6 +538,7 @@ export type Database = {
         Insert: {
           customer_id: number
           occurred_at?: string
+          recipient_account?: string | null
           txn_amount: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
           txn_id?: never
@@ -545,6 +547,7 @@ export type Database = {
         Update: {
           customer_id?: number
           occurred_at?: string
+          recipient_account?: string | null
           txn_amount?: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
           txn_id?: never
