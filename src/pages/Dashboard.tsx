@@ -1,4 +1,4 @@
-// Last updated: 25th January 2025
+// Last updated: 25th January 2026
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -26,6 +26,8 @@ import {
   FileText,
   ClipboardList,
   Plus,
+  Gavel,
+  MessageSquare,
 } from 'lucide-react';
 
 interface KPI {
@@ -52,6 +54,12 @@ interface SuspiciousTransaction {
   risk_score: number;
   risk_level: string;
   flagged_at: string;
+}
+
+interface DecisionStats {
+  draftCount: number;
+  finalCount: number;
+  communicatedCount: number;
 }
 
 const severityColors: Record<string, string> = {
@@ -81,6 +89,12 @@ export default function Dashboard() {
   const [suspicious, setSuspicious] = useState<SuspiciousTransaction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [assignedCasesCount, setAssignedCasesCount] = useState(0);
+  const [decisionStats, setDecisionStats] = useState<DecisionStats>({
+    draftCount: 0,
+    finalCount: 0,
+    communicatedCount: 0,
+  });
+  const [customerDecisionCount, setCustomerDecisionCount] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -114,6 +128,25 @@ export default function Dashboard() {
         .order('flagged_at', { ascending: false })
         .limit(10);
       if (suspData) setSuspicious(suspData as unknown as SuspiciousTransaction[]);
+    }
+
+    // Fetch decision stats for admin
+    if (isAdmin) {
+      const [caseDecRes, txnDecRes] = await Promise.all([
+        supabase.from('case_decisions').select('status'),
+        supabase.from('transaction_decisions').select('status'),
+      ]);
+
+      const allDecisions = [
+        ...(caseDecRes.data || []),
+        ...(txnDecRes.data || []),
+      ];
+
+      setDecisionStats({
+        draftCount: allDecisions.filter((d) => d.status === 'DRAFT').length,
+        finalCount: allDecisions.filter((d) => d.status === 'FINAL').length,
+        communicatedCount: allDecisions.filter((d) => d.status === 'COMMUNICATED').length,
+      });
     }
 
     // Fetch cases based on role
@@ -169,6 +202,33 @@ export default function Dashboard() {
           .order('created_at', { ascending: false })
           .limit(10);
         if (casesData) setMyCases(casesData as FraudCase[]);
+
+        // Fetch customer's transactions to check for decisions
+        const { data: txnsData } = await supabase
+          .from('transactions')
+          .select('txn_id')
+          .eq('customer_id', customerData.customer_id);
+
+        const caseIds = casesData?.map((c) => c.case_id) || [];
+        const txnIds = txnsData?.map((t) => t.txn_id) || [];
+
+        // Count decisions visible to customer (FINAL or COMMUNICATED)
+        let totalCustomerDecisions = 0;
+        if (caseIds.length > 0) {
+          const { data: caseDecisions } = await supabase
+            .from('case_decisions')
+            .select('decision_id')
+            .in('case_id', caseIds);
+          totalCustomerDecisions += caseDecisions?.length || 0;
+        }
+        if (txnIds.length > 0) {
+          const { data: txnDecisions } = await supabase
+            .from('transaction_decisions')
+            .select('decision_id')
+            .in('txn_id', txnIds);
+          totalCustomerDecisions += txnDecisions?.length || 0;
+        }
+        setCustomerDecisionCount(totalCustomerDecisions);
       }
     }
 
@@ -299,6 +359,56 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Admin Decisions Status */}
+        {isAdmin && (
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gavel className="h-5 w-5 text-primary" />
+                  <CardTitle>Decision Status Overview</CardTitle>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/admin-decisions">
+                    View All <ArrowRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                  <div className="p-3 rounded-full bg-amber-100">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{decisionStats.draftCount}</p>
+                    <p className="text-sm text-muted-foreground">Draft Decisions</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                  <div className="p-3 rounded-full bg-blue-100">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{decisionStats.finalCount}</p>
+                    <p className="text-sm text-muted-foreground">Finalized</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                  <div className="p-3 rounded-full bg-green-100">
+                    <MessageSquare className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{decisionStats.communicatedCount}</p>
+                    <p className="text-sm text-muted-foreground">Communicated</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Role-Specific Stats */}
         {isInvestigator && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -352,7 +462,7 @@ export default function Dashboard() {
         )}
 
         {isCustomer && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="glass-card">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -397,6 +507,23 @@ export default function Dashboard() {
                   {myCases.filter((c) => c.status === 'CLOSED').length}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Cases closed</p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-primary/20 bg-primary/5">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Decisions
+                </CardTitle>
+                <Gavel className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{customerDecisionCount}</div>
+                <Button variant="link" className="p-0 h-auto mt-2" asChild>
+                  <Link to="/my-decisions">
+                    View all <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </div>

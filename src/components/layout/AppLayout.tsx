@@ -17,6 +17,7 @@ import {
   Terminal,
   Database,
   PlusCircle,
+  Gavel,
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -26,8 +27,10 @@ interface AppLayoutProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: [1, 2, 3, 4] },
   { name: 'Cases', href: '/cases', icon: FileText, roles: [1, 2, 3, 4] },
+  { name: 'My Decisions', href: '/my-decisions', icon: Gavel, roles: [4] },
   { name: 'Create Transaction', href: '/transactions/new', icon: PlusCircle, roles: [4] },
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },
+  { name: 'Decisions', href: '/admin-decisions', icon: Gavel, roles: [1] },
   { name: 'Users', href: '/users', icon: Users, roles: [1] },
   { name: 'Investigations', href: '/investigations', icon: ClipboardList, roles: [1, 2] },
   { name: 'Query Debugger', href: '/query-debugger', icon: Terminal, roles: [1, 3] },

@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 25th January 2026
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,8 @@ import Support from "./pages/Support";
 import Privacy from "./pages/Privacy";
 import QueryDebugger from "./pages/QueryDebugger";
 import DatabaseSchema from "./pages/DatabaseSchema";
+import AdminDecisions from "./pages/AdminDecisions";
+import MyDecisions from "./pages/MyDecisions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +56,8 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/query-debugger" element={<QueryDebugger />} />
             <Route path="/database-schema" element={<DatabaseSchema />} />
+            <Route path="/admin-decisions" element={<AdminDecisions />} />
+            <Route path="/my-decisions" element={<MyDecisions />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatAssistance />
