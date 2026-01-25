@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 25th January 2025
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -8,19 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFeedbackForm';
 import {
   ArrowLeft,
   FileText,
   Upload,
   Download,
-  Trash2,
   User,
   Clock,
-  AlertTriangle,
   FileImage,
   FileIcon,
+  MessageSquare,
 } from 'lucide-react';
 
 interface FraudCase {
@@ -50,7 +49,17 @@ interface CaseHistory {
   comment: string | null;
 }
 
+interface CaseFeedback {
+  feedback_id: number;
+  category: string;
+  approval_status: string;
+  comment: string | null;
+  created_at: string;
+  investigator_id: number;
+}
+
 interface AssignedInvestigator {
+  investigator_id: number;
   investigator_name: string | null;
   investigator_email: string | null;
   badge_no: string | null;
@@ -80,6 +89,8 @@ export default function CaseDetail() {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [history, setHistory] = useState<CaseHistory[]>([]);
   const [investigator, setInvestigator] = useState<AssignedInvestigator | null>(null);
+  const [caseFeedback, setCaseFeedback] = useState<CaseFeedback[]>([]);
+  const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadNote, setUploadNote] = useState('');
@@ -142,6 +153,30 @@ export default function CaseDetail() {
 
     if (investigatorResult) {
       setInvestigator(investigatorResult as unknown as AssignedInvestigator);
+    }
+
+    // Fetch case feedback
+    const { data: feedbackResult } = await supabase
+      .from('case_feedback')
+      .select('*')
+      .eq('case_id', parseInt(caseId))
+      .order('created_at', { ascending: false });
+
+    if (feedbackResult) {
+      setCaseFeedback(feedbackResult as unknown as CaseFeedback[]);
+    }
+
+    // Fetch my investigator ID if I'm an investigator
+    if (isInvestigator && user) {
+      const { data: invData } = await supabase
+        .from('investigators')
+        .select('investigator_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (invData) {
+        setMyInvestigatorId(invData.investigator_id);
+      }
     }
 
     setLoadingData(false);
@@ -406,6 +441,30 @@ export default function CaseDetail() {
                       </p>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Investigator Feedback Section */}
+            {(isInvestigator || isAdmin) && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <MessageSquare className="h-4 w-4" />
+                      Feedback & Approval
+                    </CardTitle>
+                    {isInvestigator && myInvestigatorId && caseId && (
+                      <CaseFeedbackForm
+                        caseId={parseInt(caseId)}
+                        investigatorId={myInvestigatorId}
+                        onFeedbackSubmitted={fetchCaseData}
+                      />
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
                 </CardContent>
               </Card>
             )}

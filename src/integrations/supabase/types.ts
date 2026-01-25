@@ -120,6 +120,61 @@ export type Database = {
           },
         ]
       }
+      case_feedback: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          case_id: number
+          category: Database["public"]["Enums"]["feedback_category"]
+          comment: string | null
+          created_at: string
+          feedback_id: number
+          investigator_id: number
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          case_id: number
+          category: Database["public"]["Enums"]["feedback_category"]
+          comment?: string | null
+          created_at?: string
+          feedback_id?: never
+          investigator_id: number
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          case_id?: number
+          category?: Database["public"]["Enums"]["feedback_category"]
+          comment?: string | null
+          created_at?: string
+          feedback_id?: never
+          investigator_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_feedback_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "fraud_cases"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "case_feedback_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["investigator_id"]
+          },
+          {
+            foreignKeyName: "case_feedback_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "v_case_assigned_investigator"
+            referencedColumns: ["investigator_id"]
+          },
+        ]
+      }
       case_history: {
         Row: {
           case_id: number
@@ -525,6 +580,61 @@ export type Database = {
           },
         ]
       }
+      transaction_feedback: {
+        Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          category: Database["public"]["Enums"]["feedback_category"]
+          comment: string | null
+          created_at: string
+          feedback_id: number
+          investigator_id: number
+          txn_id: number
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          category: Database["public"]["Enums"]["feedback_category"]
+          comment?: string | null
+          created_at?: string
+          feedback_id?: never
+          investigator_id: number
+          txn_id: number
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          category?: Database["public"]["Enums"]["feedback_category"]
+          comment?: string | null
+          created_at?: string
+          feedback_id?: never
+          investigator_id?: number
+          txn_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_feedback_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["investigator_id"]
+          },
+          {
+            foreignKeyName: "transaction_feedback_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "v_case_assigned_investigator"
+            referencedColumns: ["investigator_id"]
+          },
+          {
+            foreignKeyName: "transaction_feedback_txn_id_fkey"
+            columns: ["txn_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["txn_id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           customer_id: number
@@ -764,6 +874,7 @@ export type Database = {
       user_owns_customer: { Args: { p_customer_id: number }; Returns: boolean }
     }
     Enums: {
+      approval_status: "PENDING" | "APPROVED" | "REJECTED" | "ESCALATED"
       audit_action: "INSERT" | "UPDATE" | "DELETE"
       case_category:
         | "PAYMENT_FRAUD"
@@ -773,6 +884,12 @@ export type Database = {
         | "OTHER"
       case_status: "OPEN" | "UNDER_INVESTIGATION" | "CLOSED"
       evidence_type: "SCREENSHOT" | "PDF" | "TRANSACTION_LOG" | "OTHER"
+      feedback_category:
+        | "CONFIRMED_FRAUD"
+        | "FALSE_POSITIVE"
+        | "REQUIRES_MORE_INFO"
+        | "ESCALATE_TO_ADMIN"
+        | "UNDER_REVIEW"
       risk_level: "LOW" | "MEDIUM" | "HIGH"
       severity_level: "LOW" | "MEDIUM" | "HIGH"
       txn_channel: "BKASH" | "NAGAD" | "CARD" | "BANK" | "CASH" | "OTHER"
@@ -903,6 +1020,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      approval_status: ["PENDING", "APPROVED", "REJECTED", "ESCALATED"],
       audit_action: ["INSERT", "UPDATE", "DELETE"],
       case_category: [
         "PAYMENT_FRAUD",
@@ -913,6 +1031,13 @@ export const Constants = {
       ],
       case_status: ["OPEN", "UNDER_INVESTIGATION", "CLOSED"],
       evidence_type: ["SCREENSHOT", "PDF", "TRANSACTION_LOG", "OTHER"],
+      feedback_category: [
+        "CONFIRMED_FRAUD",
+        "FALSE_POSITIVE",
+        "REQUIRES_MORE_INFO",
+        "ESCALATE_TO_ADMIN",
+        "UNDER_REVIEW",
+      ],
       risk_level: ["LOW", "MEDIUM", "HIGH"],
       severity_level: ["LOW", "MEDIUM", "HIGH"],
       txn_channel: ["BKASH", "NAGAD", "CARD", "BANK", "CASH", "OTHER"],
