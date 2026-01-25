@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 25th January 2025
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Activity, Search, AlertTriangle, DollarSign } from 'lucide-react';
+import TransactionFeedbackForm, { TransactionFeedbackList } from '@/components/feedback/TransactionFeedbackForm';
+import { Activity, Search, AlertTriangle } from 'lucide-react';
 
 interface Transaction {
   txn_id: number;
@@ -23,6 +24,7 @@ interface Transaction {
   txn_location: string | null;
   txn_channel: string;
   occurred_at: string;
+  recipient_account: string | null;
 }
 
 interface SuspiciousTransaction {
@@ -32,6 +34,16 @@ interface SuspiciousTransaction {
   risk_level: string;
   reasons: string | null;
   flagged_at: string;
+}
+
+interface TransactionFeedback {
+  feedback_id: number;
+  txn_id: number;
+  category: string;
+  approval_status: string;
+  comment: string | null;
+  created_at: string;
+  investigator_id: number;
 }
 
 const riskColors: Record<string, string> = {
@@ -55,6 +67,8 @@ export default function Transactions() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [suspicious, setSuspicious] = useState<SuspiciousTransaction[]>([]);
+  const [transactionFeedback, setTransactionFeedback] = useState<TransactionFeedback[]>([]);
+  const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
@@ -113,6 +127,29 @@ export default function Transactions() {
       } else {
         setSuspicious([]);
       }
+
+      // Fetch transaction feedback
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from('transaction_feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!feedbackError && feedbackData) {
+        setTransactionFeedback(feedbackData as TransactionFeedback[]);
+      }
+
+      // Fetch my investigator ID if I'm an investigator
+      if (isInvestigator && user) {
+        const { data: invData } = await supabase
+          .from('investigators')
+          .select('investigator_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (invData) {
+          setMyInvestigatorId(invData.investigator_id);
+        }
+      }
     } catch (error) {
       console.error('Unexpected error fetching data:', error);
       setTransactions([]);
@@ -124,6 +161,7 @@ export default function Transactions() {
 
   const suspiciousTxnIds = new Set(suspicious.map((s) => s.txn_id));
   const getSuspiciousInfo = (txnId: number) => suspicious.find((s) => s.txn_id === txnId);
+  const getTxnFeedback = (txnId: number) => transactionFeedback.filter((f) => f.txn_id === txnId);
 
   const filteredTransactions = transactions.filter((t) => {
     const matchesSearch =
@@ -268,16 +306,20 @@ export default function Transactions() {
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Location</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Time</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Risk</th>
+                      {isInvestigator && (
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Action</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTransactions.map((t) => {
                       const suspInfo = getSuspiciousInfo(t.txn_id);
+                      const txnFeedback = getTxnFeedback(t.txn_id);
                       return (
                         <tr
                           key={t.txn_id}
                           className={`border-b hover:bg-muted/50 transition-colors ${
-                            suspInfo ? 'bg-red-50/50' : ''
+                            suspInfo ? 'bg-destructive/5' : ''
                           }`}
                         >
                           <td className="py-3 px-4 font-mono text-sm">#{t.txn_id}</td>
@@ -304,11 +346,23 @@ export default function Transactions() {
                                     {suspInfo.reasons}
                                   </span>
                                 )}
+                                <TransactionFeedbackList txnId={t.txn_id} feedback={txnFeedback} />
                               </div>
                             ) : (
                               <span className="text-muted-foreground text-sm">—</span>
                             )}
                           </td>
+                          {isInvestigator && (
+                            <td className="py-3 px-4">
+                              {suspInfo && myInvestigatorId && (
+                                <TransactionFeedbackForm
+                                  txnId={t.txn_id}
+                                  investigatorId={myInvestigatorId}
+                                  onFeedbackSubmitted={fetchData}
+                                />
+                              )}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
