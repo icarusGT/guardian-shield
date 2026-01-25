@@ -26,6 +26,7 @@ import QueryDebugger from "./pages/QueryDebugger";
 import DatabaseSchema from "./pages/DatabaseSchema";
 import AdminDecisions from "./pages/AdminDecisions";
 import MyDecisions from "./pages/MyDecisions";
+import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/database-schema" element={<DatabaseSchema />} />
             <Route path="/admin-decisions" element={<AdminDecisions />} />
             <Route path="/my-decisions" element={<MyDecisions />} />
+            <Route path="/admin-feedback" element={<AdminFeedback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatAssistance />
