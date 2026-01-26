@@ -28,8 +28,8 @@ interface AppLayoutProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: [1, 2, 3, 4] },
   { name: 'Cases', href: '/cases', icon: FileText, roles: [1, 2, 3, 4] },
+  { name: 'Report Fraud', href: '/cases/new', icon: PlusCircle, roles: [4] },
   { name: 'My Decisions', href: '/my-decisions', icon: Gavel, roles: [4] },
-  { name: 'Create Transaction', href: '/transactions/new', icon: PlusCircle, roles: [4] },
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },
   { name: 'Decisions', href: '/admin-decisions', icon: Gavel, roles: [1] },
   { name: 'Feedback', href: '/admin-feedback', icon: MessageSquareText, roles: [1] },
