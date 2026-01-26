@@ -289,13 +289,13 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Get Transactions with Suspicious Info',
-    query: 'SELECT t.*, st.risk_level, st.risk_score, st.reasons FROM transactions t JOIN suspicious_transactions st ON t.txn_id = st.txn_id ORDER BY st.risk_score DESC LIMIT 20',
+    name: 'Get Suspicious Transactions',
+    query: 'SELECT * FROM suspicious_transactions ORDER BY risk_score DESC LIMIT 20',
     type: 'select' as const,
   },
   {
-    name: 'Get Cases with Assignments',
-    query: 'SELECT fc.*, ca.assigned_at, ca.investigator_id FROM fraud_cases fc LEFT JOIN case_assignments ca ON fc.case_id = ca.case_id ORDER BY fc.created_at DESC LIMIT 20',
+    name: 'Get Cases with Assigned Investigators (View)',
+    query: 'SELECT * FROM v_case_assigned_investigator ORDER BY assigned_at DESC LIMIT 20',
     type: 'select' as const,
   },
   {
