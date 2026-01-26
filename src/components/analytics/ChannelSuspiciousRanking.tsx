@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -38,6 +40,15 @@ interface ChannelRanking {
   suspicious_rate_pct: number;
 }
 
+interface ChannelSeverityRanking {
+  channel: string;
+  severity: string;
+  total_txn: number;
+  suspicious_txn: number;
+  avg_risk_score: number;
+  suspicious_rate_pct: number;
+}
+
 type DateFilter = '7days' | '30days' | 'all';
 
 const channelIcons: Record<string, React.ReactNode> = {
@@ -58,18 +69,27 @@ const channelColors: Record<string, string> = {
   OTHER: 'bg-muted text-muted-foreground border-muted',
 };
 
+const severityColors: Record<string, string> = {
+  LOW: 'bg-green-100 text-green-700',
+  MEDIUM: 'bg-amber-100 text-amber-700',
+  HIGH: 'bg-red-100 text-red-700',
+  'No Case': 'bg-muted text-muted-foreground',
+};
+
 export default function ChannelSuspiciousRanking() {
-  const [data, setData] = useState<ChannelRanking[]>([]);
+  const [channelData, setChannelData] = useState<ChannelRanking[]>([]);
+  const [severityData, setSeverityData] = useState<ChannelSeverityRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [groupBySeverity, setGroupBySeverity] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, [dateFilter]);
+  }, [dateFilter, groupBySeverity]);
 
   const fetchData = async () => {
     setLoading(true);
-    console.log('[ChannelSuspiciousRanking] Fetching data with filter:', dateFilter);
+    console.log('[ChannelSuspiciousRanking] Fetching data with filter:', dateFilter, 'groupBySeverity:', groupBySeverity);
 
     try {
       // Calculate date range based on filter
@@ -84,57 +104,125 @@ export default function ChannelSuspiciousRanking() {
         fromDate = d.toISOString();
       }
 
-      // Since the view doesn't have date filtering, we need to query directly with date filter
-      // For "all time", we can use the view directly
-      if (dateFilter === 'all') {
-        const { data: viewData, error } = await supabase
-          .from('v_channel_suspicious_ranking')
-          .select('*');
+      // Fetch transactions (with or without date filter)
+      let txnQuery = supabase
+        .from('transactions')
+        .select('txn_id, txn_channel, customer_id, occurred_at');
 
-        if (error) {
-          console.error('Error fetching channel ranking:', error);
-          setData([]);
-        } else {
-          setData((viewData as unknown as ChannelRanking[]) || []);
-        }
-      } else {
-        // For date-filtered queries, use raw query via transactions
-        const { data: txnData, error: txnError } = await supabase
-          .from('transactions')
-          .select('txn_id, txn_channel, occurred_at')
-          .gte('occurred_at', fromDate!);
+      if (fromDate) {
+        txnQuery = txnQuery.gte('occurred_at', fromDate);
+      }
 
-        if (txnError) {
-          console.error('Error fetching transactions:', txnError);
-          setData([]);
-          setLoading(false);
-          return;
-        }
+      const { data: txnData, error: txnError } = await txnQuery;
 
-        if (!txnData || txnData.length === 0) {
-          setData([]);
-          setLoading(false);
-          return;
-        }
+      if (txnError) {
+        console.error('Error fetching transactions:', txnError);
+        setChannelData([]);
+        setSeverityData([]);
+        setLoading(false);
+        return;
+      }
 
-        const txnIds = txnData.map((t) => t.txn_id);
+      if (!txnData || txnData.length === 0) {
+        setChannelData([]);
+        setSeverityData([]);
+        setLoading(false);
+        return;
+      }
 
-        // Fetch suspicious transactions for these txn_ids
-        const { data: suspData, error: suspError } = await supabase
-          .from('suspicious_transactions')
-          .select('txn_id, risk_score, risk_level')
+      const txnIds = txnData.map((t) => t.txn_id);
+
+      // Fetch suspicious transactions for these txn_ids
+      const { data: suspData, error: suspError } = await supabase
+        .from('suspicious_transactions')
+        .select('txn_id, risk_score, risk_level')
+        .in('txn_id', txnIds);
+
+      if (suspError) {
+        console.error('Error fetching suspicious transactions:', suspError);
+      }
+
+      // Create a map for suspicious data
+      const suspMap = new Map(
+        (suspData || []).map((s) => [s.txn_id, { risk_score: s.risk_score, risk_level: s.risk_level }])
+      );
+
+      if (groupBySeverity) {
+        // Also fetch case_transactions and fraud_cases for severity breakdown
+        const { data: caseTransData, error: ctError } = await supabase
+          .from('case_transactions')
+          .select('txn_id, case_id')
           .in('txn_id', txnIds);
 
-        if (suspError) {
-          console.error('Error fetching suspicious transactions:', suspError);
+        if (ctError) {
+          console.error('Error fetching case_transactions:', ctError);
         }
 
-        // Create a map for suspicious data
-        const suspMap = new Map(
-          (suspData || []).map((s) => [s.txn_id, { risk_score: s.risk_score, risk_level: s.risk_level }])
+        const caseIds = [...new Set((caseTransData || []).map((ct) => ct.case_id))];
+
+        let caseSeverityMap = new Map<number, string>();
+        if (caseIds.length > 0) {
+          const { data: casesData, error: casesError } = await supabase
+            .from('fraud_cases')
+            .select('case_id, severity')
+            .in('case_id', caseIds);
+
+          if (casesError) {
+            console.error('Error fetching fraud_cases:', casesError);
+          } else if (casesData) {
+            caseSeverityMap = new Map(casesData.map((c) => [c.case_id, c.severity]));
+          }
+        }
+
+        const txnToCaseMap = new Map(
+          (caseTransData || []).map((ct) => [ct.txn_id, ct.case_id])
         );
 
-        // Aggregate by channel
+        // Aggregate by channel + severity
+        const aggregateMap = new Map<string, {
+          total: number;
+          suspicious: number;
+          totalScore: number;
+          scoreCount: number;
+        }>();
+
+        txnData.forEach((txn) => {
+          const channel = txn.txn_channel || 'OTHER';
+          const caseId = txnToCaseMap.get(txn.txn_id);
+          const severity = caseId ? (caseSeverityMap.get(caseId) || 'No Case') : 'No Case';
+          const suspInfo = suspMap.get(txn.txn_id);
+
+          const key = `${channel}|${severity}`;
+          const existing = aggregateMap.get(key) || { total: 0, suspicious: 0, totalScore: 0, scoreCount: 0 };
+
+          const isSuspicious = suspInfo && (suspInfo.risk_level === 'MEDIUM' || suspInfo.risk_level === 'HIGH');
+
+          aggregateMap.set(key, {
+            total: existing.total + 1,
+            suspicious: existing.suspicious + (isSuspicious ? 1 : 0),
+            totalScore: existing.totalScore + (suspInfo?.risk_score || 0),
+            scoreCount: existing.scoreCount + (suspInfo ? 1 : 0),
+          });
+        });
+
+        // Convert to array
+        const result: ChannelSeverityRanking[] = Array.from(aggregateMap.entries())
+          .map(([key, stats]) => {
+            const [channel, severity] = key.split('|');
+            return {
+              channel,
+              severity,
+              total_txn: stats.total,
+              suspicious_txn: stats.suspicious,
+              avg_risk_score: stats.scoreCount > 0 ? Math.round((stats.totalScore / stats.scoreCount) * 100) / 100 : 0,
+              suspicious_rate_pct: stats.total > 0 ? Math.round((stats.suspicious / stats.total) * 10000) / 100 : 0,
+            };
+          })
+          .sort((a, b) => b.suspicious_txn - a.suspicious_txn || b.avg_risk_score - a.avg_risk_score);
+
+        setSeverityData(result);
+      } else {
+        // Aggregate by channel only
         const channelMap = new Map<
           string,
           { total: number; suspicious: number; totalScore: number; suspCount: number }
@@ -166,11 +254,12 @@ export default function ChannelSuspiciousRanking() {
           }))
           .sort((a, b) => b.suspicious_txn - a.suspicious_txn || b.avg_risk_score - a.avg_risk_score);
 
-        setData(result);
+        setChannelData(result);
       }
     } catch (error) {
       console.error('Error in fetchData:', error);
-      setData([]);
+      setChannelData([]);
+      setSeverityData([]);
     } finally {
       setLoading(false);
     }
@@ -189,8 +278,15 @@ export default function ChannelSuspiciousRanking() {
     return 'text-muted-foreground';
   };
 
-  const totalTransactions = data.reduce((sum, d) => sum + d.total_txn, 0);
-  const totalSuspicious = data.reduce((sum, d) => sum + d.suspicious_txn, 0);
+  const totalTransactions = groupBySeverity
+    ? severityData.reduce((sum, d) => sum + d.total_txn, 0)
+    : channelData.reduce((sum, d) => sum + d.total_txn, 0);
+
+  const totalSuspicious = groupBySeverity
+    ? severityData.reduce((sum, d) => sum + d.suspicious_txn, 0)
+    : channelData.reduce((sum, d) => sum + d.suspicious_txn, 0);
+
+  const dataEmpty = groupBySeverity ? severityData.length === 0 : channelData.length === 0;
 
   return (
     <Card className="glass-card">
@@ -215,7 +311,18 @@ export default function ChannelSuspiciousRanking() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="group-severity"
+                checked={groupBySeverity}
+                onCheckedChange={setGroupBySeverity}
+              />
+              <Label htmlFor="group-severity" className="text-sm cursor-pointer">
+                Group by Severity
+              </Label>
+            </div>
+
             <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Time range" />
@@ -241,7 +348,7 @@ export default function ChannelSuspiciousRanking() {
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
-        ) : data.length === 0 ? (
+        ) : dataEmpty ? (
           <div className="text-center py-8">
             <AlertTriangle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">No transaction data available for the selected period.</p>
@@ -252,8 +359,9 @@ export default function ChannelSuspiciousRanking() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="w-12">#</TableHead>
+                    {!groupBySeverity && <TableHead className="w-12">#</TableHead>}
                     <TableHead>Channel</TableHead>
+                    {groupBySeverity && <TableHead>Severity</TableHead>}
                     <TableHead className="text-right">Total Txn</TableHead>
                     <TableHead className="text-right">Suspicious Txn</TableHead>
                     <TableHead className="text-right">Avg Risk Score</TableHead>
@@ -261,33 +369,63 @@ export default function ChannelSuspiciousRanking() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.map((row, index) => (
-                    <TableRow key={row.channel} className="hover:bg-muted/30">
-                      <TableCell className="font-medium text-muted-foreground">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`${channelColors[row.channel]} gap-1`}>
-                          {channelIcons[row.channel]}
-                          {row.channel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">{row.total_txn}</TableCell>
-                      <TableCell className="text-right">
-                        {row.suspicious_txn > 0 ? (
-                          <Badge variant="destructive">{row.suspicious_txn}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">0</span>
-                        )}
-                      </TableCell>
-                      <TableCell className={`text-right ${getScoreColor(row.avg_risk_score)}`}>
-                        {row.avg_risk_score > 0 ? row.avg_risk_score.toFixed(2) : '—'}
-                      </TableCell>
-                      <TableCell className={`text-right ${getRateColor(row.suspicious_rate_pct)}`}>
-                        {row.suspicious_rate_pct > 0 ? `${row.suspicious_rate_pct.toFixed(2)}%` : '0%'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {groupBySeverity
+                    ? severityData.map((row, index) => (
+                        <TableRow key={`${row.channel}-${row.severity}-${index}`} className="hover:bg-muted/30">
+                          <TableCell>
+                            <Badge variant="outline" className={`${channelColors[row.channel]} gap-1`}>
+                              {channelIcons[row.channel]}
+                              {row.channel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={severityColors[row.severity] || severityColors['No Case']}>
+                              {row.severity}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">{row.total_txn}</TableCell>
+                          <TableCell className="text-right">
+                            {row.suspicious_txn > 0 ? (
+                              <Badge variant="destructive">{row.suspicious_txn}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                          <TableCell className={`text-right ${getScoreColor(row.avg_risk_score)}`}>
+                            {row.avg_risk_score > 0 ? row.avg_risk_score.toFixed(2) : '—'}
+                          </TableCell>
+                          <TableCell className={`text-right ${getRateColor(row.suspicious_rate_pct)}`}>
+                            {row.suspicious_rate_pct > 0 ? `${row.suspicious_rate_pct.toFixed(2)}%` : '0%'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    : channelData.map((row, index) => (
+                        <TableRow key={row.channel} className="hover:bg-muted/30">
+                          <TableCell className="font-medium text-muted-foreground">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`${channelColors[row.channel]} gap-1`}>
+                              {channelIcons[row.channel]}
+                              {row.channel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">{row.total_txn}</TableCell>
+                          <TableCell className="text-right">
+                            {row.suspicious_txn > 0 ? (
+                              <Badge variant="destructive">{row.suspicious_txn}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                          <TableCell className={`text-right ${getScoreColor(row.avg_risk_score)}`}>
+                            {row.avg_risk_score > 0 ? row.avg_risk_score.toFixed(2) : '—'}
+                          </TableCell>
+                          <TableCell className={`text-right ${getRateColor(row.suspicious_rate_pct)}`}>
+                            {row.suspicious_rate_pct > 0 ? `${row.suspicious_rate_pct.toFixed(2)}%` : '0%'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                 </TableBody>
               </Table>
             </div>

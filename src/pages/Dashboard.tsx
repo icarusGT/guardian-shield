@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import FraudHotspotsAnalytics from '@/components/analytics/FraudHotspotsAnalytics';
 import ChannelSuspiciousRanking from '@/components/analytics/ChannelSuspiciousRanking';
-import ChannelSeverityRanking from '@/components/analytics/ChannelSeverityRanking';
+
 import UsersMultipleCases from '@/components/analytics/UsersMultipleCases';
 import {
   Shield,
@@ -575,9 +575,6 @@ export default function Dashboard() {
 
         {/* Channel-wise Suspicious Ranking - Admin Only */}
         {isAdmin && <ChannelSuspiciousRanking />}
-
-        {/* Channel + Severity Ranking - Admin Only */}
-        {isAdmin && <ChannelSeverityRanking />}
 
         {/* Users with Multiple Fraud Cases - Admin Only */}
         {isAdmin && <UsersMultipleCases />}
