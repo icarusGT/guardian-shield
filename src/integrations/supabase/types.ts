@@ -940,6 +940,16 @@ export type Database = {
           },
         ]
       }
+      v_channel_suspicious_ranking: {
+        Row: {
+          avg_risk_score: number | null
+          channel: Database["public"]["Enums"]["txn_channel"] | null
+          suspicious_rate_pct: number | null
+          suspicious_txn: number | null
+          total_txn: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       app_ip: { Args: never; Returns: string }
