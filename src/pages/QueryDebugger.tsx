@@ -299,23 +299,18 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Get Case Count by Status',
-    query: 'SELECT status, COUNT(*) as count FROM fraud_cases GROUP BY status',
+    name: 'Get KPI Case Success View',
+    query: 'SELECT * FROM kpi_case_success',
     type: 'select' as const,
   },
   {
-    name: 'Get Case Count by Severity',
-    query: 'SELECT severity, COUNT(*) as count FROM fraud_cases GROUP BY severity',
+    name: 'Get All Fraud Cases',
+    query: 'SELECT case_id, title, status, severity, category, created_at FROM fraud_cases ORDER BY created_at DESC LIMIT 20',
     type: 'select' as const,
   },
   {
-    name: 'Get Transaction Count by Channel',
-    query: 'SELECT txn_channel, COUNT(*) as count FROM transactions GROUP BY txn_channel',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Average Transaction Amount',
-    query: 'SELECT AVG(txn_amount) as avg_amount, MIN(txn_amount) as min_amount, MAX(txn_amount) as max_amount FROM transactions',
+    name: 'Get All Transactions',
+    query: 'SELECT txn_id, txn_amount, txn_channel, txn_location, occurred_at FROM transactions ORDER BY occurred_at DESC LIMIT 20',
     type: 'select' as const,
   },
   {
@@ -504,6 +499,16 @@ export default function QueryDebugger() {
           // Parse SELECT query to extract columns and filters
           const selectMatch = query.match(/SELECT\s+(.+?)\s+FROM/i);
           const columns = selectMatch?.[1] || '*';
+          
+          // Check for aggregate functions - these aren't supported in PostgREST .select()
+          const aggregateFunctions = /\b(AVG|COUNT|SUM|MIN|MAX|GROUP BY)\s*\(/i;
+          if (aggregateFunctions.test(columns) || /GROUP BY/i.test(query)) {
+            throw new Error(
+              'Aggregate functions (AVG, COUNT, SUM, MIN, MAX) and GROUP BY are not supported in direct queries. ' +
+              'Use the kpi_case_success view for pre-calculated metrics, or fetch raw data and calculate in JavaScript.'
+            );
+          }
+          
           const whereMatch = query.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
           const orderMatch = query.match(/ORDER BY\s+(.+?)(?:\s+LIMIT|$)/i);
           const limitMatch = query.match(/LIMIT\s+(\d+)/i);
