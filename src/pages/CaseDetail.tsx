@@ -95,6 +95,12 @@ interface LinkedTransaction {
   reasons?: string;
 }
 
+interface ReportedUser {
+  user_id: string;
+  full_name: string;
+  email: string | null;
+}
+
 const severityColors: Record<string, string> = {
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
@@ -121,6 +127,7 @@ export default function CaseDetail() {
   const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
   const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
   const [linkedTransactions, setLinkedTransactions] = useState<LinkedTransaction[]>([]);
+  const [reportedUser, setReportedUser] = useState<ReportedUser | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadNote, setUploadNote] = useState('');
@@ -150,6 +157,29 @@ export default function CaseDetail() {
 
     if (caseResult) {
       setCaseData(caseResult as unknown as FraudCase);
+      
+      // Fetch reported user info via customer_id -> customers -> users
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('user_id')
+        .eq('customer_id', caseResult.customer_id)
+        .maybeSingle();
+      
+      if (customerData?.user_id) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('user_id, full_name, email')
+          .eq('user_id', customerData.user_id)
+          .maybeSingle();
+        
+        if (userData) {
+          setReportedUser({
+            user_id: userData.user_id,
+            full_name: userData.full_name,
+            email: userData.email,
+          });
+        }
+      }
     }
 
     // Fetch evidence
@@ -423,17 +453,53 @@ export default function CaseDetail() {
               </CardContent>
             </Card>
 
-            {/* Linked Transaction(s) - Read-only Evidence Section */}
-            {linkedTransactions.length > 0 && (
-              <Card className="border-amber-200 bg-amber-50/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-amber-600" />
-                    Linked Transaction Evidence
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {linkedTransactions.map((txn) => (
+            {/* Reported By Section */}
+            <Card className="border-blue-200 bg-blue-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-blue-600" />
+                  Reported By
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {reportedUser ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">User ID</p>
+                      <p className="text-sm font-mono font-medium truncate" title={reportedUser.user_id}>
+                        {reportedUser.user_id.slice(0, 8)}...
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Full Name</p>
+                      <p className="text-sm font-medium">{reportedUser.full_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium">
+                        {reportedUser.email || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Unable to load reporter information.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Transaction Details Section */}
+            <Card className="border-amber-200 bg-amber-50/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-amber-600" />
+                  Transaction Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {linkedTransactions.length > 0 ? (
+                  linkedTransactions.map((txn) => (
                     <div
                       key={txn.txn_id}
                       className="p-4 bg-background rounded-lg border space-y-3"
@@ -442,7 +508,7 @@ export default function CaseDetail() {
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-5 w-5 text-primary" />
                           <span className="text-lg font-bold">
-                            ৳{txn.txn_amount.toLocaleString()}
+                            ৳{txn.txn_amount.toLocaleString()} BDT
                           </span>
                           <Badge variant="outline">{txn.txn_channel}</Badge>
                         </div>
@@ -463,6 +529,24 @@ export default function CaseDetail() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Transaction ID</p>
+                          <p className="font-mono font-medium">#{txn.txn_id}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Amount (BDT)</p>
+                          <p className="font-medium">৳{txn.txn_amount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Payment Channel</p>
+                          <p className="font-medium">{txn.txn_channel}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Occurred At</p>
+                          <p className="font-medium">
+                            {new Date(txn.occurred_at).toLocaleString()}
+                          </p>
+                        </div>
                         {txn.recipient_account && (
                           <div>
                             <p className="text-muted-foreground">Recipient</p>
@@ -478,12 +562,6 @@ export default function CaseDetail() {
                             </p>
                           </div>
                         )}
-                        <div>
-                          <p className="text-muted-foreground">Transaction Time</p>
-                          <p className="font-medium">
-                            {new Date(txn.occurred_at).toLocaleString()}
-                          </p>
-                        </div>
                         {txn.risk_score !== undefined && (
                           <div>
                             <p className="text-muted-foreground">Risk Score</p>
@@ -501,10 +579,14 @@ export default function CaseDetail() {
                         </div>
                       )}
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No transaction details provided for this case.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Evidence Upload */}
             <Card>
