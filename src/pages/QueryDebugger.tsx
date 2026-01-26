@@ -599,20 +599,31 @@ export default function QueryDebugger() {
 
       if (error || result.error) {
         execution.status = 'error';
+        
+        // Extract error properties for proper serialization
+        const errorObj = result.error || error;
+        const serializedError = {
+          message: errorObj?.message || 'Unknown error',
+          code: errorObj?.code,
+          details: errorObj?.details,
+          hint: errorObj?.hint,
+          ...(errorObj?.stack && { stack: errorObj.stack })
+        };
+        
         execution.responseDetails = {
           status: 400,
           statusText: 'Error',
           headers: {},
           data: null,
-          error: result.error || error,
+          error: serializedError,
         };
 
         addStep(execution, {
           step: '4. Response Processing',
-          description: `Error: ${result.error?.message || error?.message}`,
+          description: `Error: ${serializedError.message}`,
           status: 'error',
           duration: queryDuration,
-          error: result.error?.message || error?.message,
+          error: serializedError.message,
         });
       } else {
         execution.status = 'success';
