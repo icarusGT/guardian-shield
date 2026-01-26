@@ -534,6 +534,21 @@ ORDER BY suspicious_txn DESC, avg_risk_score DESC;`,
     type: 'select' as const,
   },
   {
+    name: 'Users with Multiple Fraud Cases',
+    query: `SELECT
+  u.user_id,
+  u.full_name,
+  COUNT(fc.case_id) AS total_cases,
+  MAX(fc.created_at) AS last_case_date
+FROM users u
+JOIN customers c ON c.user_id = u.user_id
+JOIN fraud_cases fc ON fc.customer_id = c.customer_id
+GROUP BY u.user_id, u.full_name
+HAVING COUNT(fc.case_id) >= 2
+ORDER BY total_cases DESC;`,
+    type: 'select' as const,
+  },
+  {
     name: 'Get Recent Audit Logs (INSERT)',
     query: 'SELECT * FROM audit_log WHERE action_type = \'INSERT\' ORDER BY acted_at DESC LIMIT 50',
     type: 'select' as const,

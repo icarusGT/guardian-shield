@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import FraudHotspotsAnalytics from '@/components/analytics/FraudHotspotsAnalytics';
 import ChannelSuspiciousRanking from '@/components/analytics/ChannelSuspiciousRanking';
 import ChannelSeverityRanking from '@/components/analytics/ChannelSeverityRanking';
+import UsersMultipleCases from '@/components/analytics/UsersMultipleCases';
 import {
   Shield,
   FileWarning,
@@ -577,6 +578,9 @@ export default function Dashboard() {
 
         {/* Channel + Severity Ranking - Admin Only */}
         {isAdmin && <ChannelSeverityRanking />}
+
+        {/* Users with Multiple Fraud Cases - Admin Only */}
+        {isAdmin && <UsersMultipleCases />}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
