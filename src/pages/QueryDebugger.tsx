@@ -498,6 +498,11 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
+    name: 'Channel-wise Suspicious Ranking',
+    query: 'SELECT * FROM v_channel_suspicious_ranking ORDER BY suspicious_txn DESC',
+    type: 'select' as const,
+  },
+  {
     name: 'Get Recent Audit Logs (INSERT)',
     query: 'SELECT * FROM audit_log WHERE action_type = \'INSERT\' ORDER BY acted_at DESC LIMIT 50',
     type: 'select' as const,
