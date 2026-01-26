@@ -69,6 +69,7 @@ export default function ChannelSuspiciousRanking() {
 
   const fetchData = async () => {
     setLoading(true);
+    console.log('[ChannelSuspiciousRanking] Fetching data with filter:', dateFilter);
 
     try {
       // Calculate date range based on filter
