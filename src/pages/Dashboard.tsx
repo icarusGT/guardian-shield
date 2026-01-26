@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import FraudHotspotsAnalytics from '@/components/analytics/FraudHotspotsAnalytics';
+import ChannelSuspiciousRanking from '@/components/analytics/ChannelSuspiciousRanking';
 import {
   Shield,
   FileWarning,
@@ -569,6 +570,9 @@ export default function Dashboard() {
 
         {/* Fraud Hotspots Analytics - Admin Only */}
         {isAdmin && <FraudHotspotsAnalytics />}
+
+        {/* Channel-wise Suspicious Ranking - Admin Only */}
+        {isAdmin && <ChannelSuspiciousRanking />}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
