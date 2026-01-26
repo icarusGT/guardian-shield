@@ -1,11 +1,10 @@
-// Last updated: 26th January 2025
+// Last updated: 20th January 2025
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/lib/auth';
-import { FraudGraudLogo } from '@/components/FraudGraudLogo';
 import {
   Shield,
   Activity,
@@ -128,13 +127,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation - Dark theme for front page */}
-      <nav className="border-b border-white/10 bg-fraudnet-dark/95 backdrop-blur-sm sticky top-0 z-50">
+      {/* Navigation */}
+      <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <FraudGraudLogo size="md" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg gradient-primary">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xl">Guardian Shield</span>
+                <span className="text-xs text-muted-foreground">by <span className="font-bold">DataShaak</span></span>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10" asChild>
+              <Button variant="ghost" asChild>
                 <Link to="/query-debugger" className="flex items-center gap-2">
                   <Terminal className="h-4 w-4" />
                   Query Debugger
@@ -142,15 +149,15 @@ export default function Home() {
               </Button>
               {!user ? (
                 <>
-                  <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10" asChild>
+                  <Button variant="ghost" asChild>
                     <Link to="/auth">Sign In</Link>
                   </Button>
-                  <Button className="gradient-vibrant text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-shadow" asChild>
+                  <Button className="gradient-primary" asChild>
                     <Link to="/auth">Get Started</Link>
                   </Button>
                 </>
               ) : (
-                <Button className="gradient-vibrant text-white font-semibold shadow-lg shadow-purple-500/25" asChild>
+                <Button className="gradient-primary" asChild>
                   <Link to="/dashboard">Dashboard</Link>
                 </Button>
               )}
@@ -159,20 +166,12 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section - Dark premium theme with animations */}
-      <section className="relative overflow-hidden py-20 sm:py-32 bg-fraudnet-dark">
-        {/* Tile pattern overlay */}
-        <div className="absolute inset-0 tile-squares-pattern" />
-        
-        {/* Animated gradient glow blobs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl glow-blob" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/15 rounded-full blur-3xl glow-blob" style={{ animationDelay: '-5s' }} />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl glow-blob" style={{ animationDelay: '-10s' }} />
-        
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-20 sm:py-32">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center">
-            {/* University badge */}
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-card-dark text-white/90 mb-6 animate-hero-fade-in">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
               <div className="bg-black p-3 rounded">
                 <img 
                   src="/UniversityLogo.png" 
@@ -182,30 +181,25 @@ export default function Home() {
               </div>
               <span className="text-sm font-medium">United International University</span>
             </div>
-            
-            {/* Main heading with animation */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-white animate-hero-fade-in" style={{ animationDelay: '0.05s' }}>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
               Guardian Shield
-              <span className="block gradient-vibrant-text mt-2">Fraud Detection & Management System</span>
+              <span className="block text-primary mt-2">Fraud Detection & Management System</span>
             </h1>
-            
-            <p className="text-xl text-white/70 mb-4 max-w-2xl mx-auto text-justify animate-hero-fade-in" style={{ animationDelay: '0.1s' }}>
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto text-justify">
               Comprehensive fraud management system with real-time detection, intelligent case management,
               and streamlined investigation workflows.
             </p>
-            <p className="text-lg text-white/60 mb-8 max-w-2xl mx-auto text-justify animate-hero-fade-in" style={{ animationDelay: '0.15s' }}>
-              Developed by <span className="font-bold gradient-vibrant-text">DataShaak</span> Team from United International University
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto text-justify">
+              Developed by <span className="font-bold text-primary">DataShaak</span> Team from United International University
             </p>
-            
-            {/* Buttons with staggered animation */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-hero-fade-in-delay" style={{ animationDelay: '0.2s' }}>
-              <Button size="lg" className="gradient-vibrant text-white text-lg px-8 font-semibold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all hover:scale-105" asChild>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="gradient-primary text-lg px-8" asChild>
                 <Link to="/auth">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 border-white/20 text-white hover:bg-white/10 hover:text-white" asChild>
+              <Button size="lg" variant="outline" className="text-lg px-8" asChild>
                 <Link to="/dashboard">View Demo</Link>
               </Button>
             </div>
