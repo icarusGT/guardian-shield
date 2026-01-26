@@ -963,6 +963,19 @@ export type Database = {
         Args: { p_ip: string; p_user_id: string }
         Returns: undefined
       }
+      update_case_status: {
+        Args: {
+          p_case_id: number
+          p_comment?: string
+          p_new_status: Database["public"]["Enums"]["case_status"]
+        }
+        Returns: {
+          message: string
+          new_status: string
+          old_status: string
+          success: boolean
+        }[]
+      }
       user_is_assigned_investigator: {
         Args: { p_case_id: number }
         Returns: boolean
