@@ -947,6 +947,14 @@ export type Database = {
       case_id_from_path: { Args: { p_path: string }; Returns: number }
       current_role_id: { Args: never; Returns: number }
       evaluate_transaction: { Args: { p_txn_id: number }; Returns: undefined }
+      get_case_reporter: {
+        Args: { p_case_id: number }
+        Returns: {
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_auditor: { Args: never; Returns: boolean }
       is_customer: { Args: never; Returns: boolean }

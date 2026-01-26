@@ -158,27 +158,17 @@ export default function CaseDetail() {
     if (caseResult) {
       setCaseData(caseResult as unknown as FraudCase);
       
-      // Fetch reported user info via customer_id -> customers_safe -> users_safe (using views for proper access)
-      const { data: customerData } = await supabase
-        .from('customers_safe')
-        .select('user_id')
-        .eq('customer_id', caseResult.customer_id)
-        .maybeSingle();
+      // Fetch reported user info using secure RPC function
+      const { data: reporterData } = await supabase
+        .rpc('get_case_reporter', { p_case_id: caseResult.case_id });
       
-      if (customerData?.user_id) {
-        const { data: userData } = await supabase
-          .from('users_safe')
-          .select('user_id, full_name, email')
-          .eq('user_id', customerData.user_id)
-          .maybeSingle();
-        
-        if (userData) {
-          setReportedUser({
-            user_id: userData.user_id,
-            full_name: userData.full_name,
-            email: userData.email,
-          });
-        }
+      if (reporterData && reporterData.length > 0) {
+        const reporter = reporterData[0];
+        setReportedUser({
+          user_id: reporter.user_id,
+          full_name: reporter.full_name,
+          email: reporter.email,
+        });
       }
     }
 
