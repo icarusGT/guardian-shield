@@ -498,8 +498,21 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Channel-wise Suspicious Ranking',
-    query: 'SELECT * FROM v_channel_suspicious_ranking ORDER BY suspicious_txn DESC',
+    name: 'Channel-wise Suspicious Ranking (Complex)',
+    query: `SELECT
+  t.txn_channel as channel,
+  count(*) as total_txn,
+  count(*) filter (where st.risk_level in ('MEDIUM','HIGH')) as suspicious_txn,
+  round(coalesce(avg(st.risk_score),0)::numeric, 2) as avg_risk_score,
+  round(
+    100.0 * count(*) filter (where st.risk_level in ('MEDIUM','HIGH')) / nullif(count(*),0),
+    2
+  ) as suspicious_rate_pct
+FROM public.transactions t
+LEFT JOIN public.suspicious_transactions st
+  ON st.txn_id = t.txn_id
+GROUP BY t.txn_channel
+ORDER BY suspicious_txn DESC, avg_risk_score DESC`,
     type: 'select' as const,
   },
   {
