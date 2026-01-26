@@ -242,23 +242,62 @@ export default function Investigations() {
       return;
     }
 
+    const oldStatus = statusCase.status;
+    
+    // Debug logging
+    console.log('Status change requested:', {
+      case_id: statusCase.case_id,
+      old_status: oldStatus,
+      new_status: newStatus,
+    });
+
     setUpdatingStatus(true);
 
     try {
-      const { error } = await supabase
-        .from('fraud_cases')
-        .update({ status: newStatus as "OPEN" | "UNDER_INVESTIGATION" | "CLOSED" })
-        .eq('case_id', statusCase.case_id);
+      // Call the secure RPC function to update status and log to case_history
+      const { data, error } = await supabase.rpc('update_case_status', {
+        p_case_id: statusCase.case_id,
+        p_new_status: newStatus as "OPEN" | "UNDER_INVESTIGATION" | "CLOSED",
+        p_comment: statusComment || null,
+      });
+
+      // Debug logging
+      console.log('Supabase update_case_status response:', { data, error });
 
       if (error) {
-        console.error('Status update error:', error);
-        toast.error(`Status update failed: ${error.message}`);
+        console.error('Status update RPC error:', error);
+        if (error.message?.includes('permission') || error.code === '42501') {
+          toast.error('Permission denied to update case status.');
+        } else {
+          toast.error(`Status update failed: ${error.message}`);
+        }
+        return;
+      }
+
+      // Check the response from the RPC function
+      if (data && data.length > 0) {
+        const result = data[0];
+        console.log('RPC result:', result);
+
+        if (result.success) {
+          toast.success(result.message || 'Status updated successfully');
+          setStatusCase(null);
+          setNewStatus('');
+          setStatusComment('');
+          // Refetch data to update UI with fresh data from database
+          await fetchData();
+        } else {
+          // Handle specific error messages from the function
+          if (result.message?.includes('Permission denied')) {
+            toast.error('Permission denied to update case status.');
+          } else {
+            toast.error(result.message || 'Failed to update status');
+          }
+        }
       } else {
-        toast.success('Status updated successfully');
-        setStatusCase(null);
-        setNewStatus('');
-        setStatusComment('');
-        await fetchData();
+        // No data returned - unexpected
+        console.error('No data returned from update_case_status');
+        toast.error('Unexpected error: No response from server');
       }
     } catch (error: any) {
       console.error('Unexpected error updating status:', error);
