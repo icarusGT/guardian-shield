@@ -530,7 +530,9 @@ export default function QueryDebugger() {
           if (orderMatch) {
             const orderClause = orderMatch[1];
             const [col, dir] = orderClause.split(/\s+/);
-            queryBuilder = queryBuilder.order(col, { ascending: dir?.toUpperCase() !== 'DESC' });
+            // Strip table alias prefix (e.g., "fc.created_at" -> "created_at")
+            const cleanCol = col.includes('.') ? col.split('.').pop()! : col;
+            queryBuilder = queryBuilder.order(cleanCol, { ascending: dir?.toUpperCase() !== 'DESC' });
           }
 
           if (limitMatch) {
