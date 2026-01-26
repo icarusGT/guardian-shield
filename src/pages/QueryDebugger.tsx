@@ -780,6 +780,29 @@ export default function QueryDebugger() {
           const selectMatch = query.match(/SELECT\s+(.+?)\s+FROM/i);
           let columns = selectMatch?.[1] || '*';
           
+          // Check for aggregate functions and GROUP BY first - these require database views
+          const hasAggregates = /\b(AVG|COUNT|SUM|MIN|MAX)\s*\(/i.test(query);
+          const hasGroupBy = /\bGROUP\s+BY\b/i.test(query);
+          const hasHaving = /\bHAVING\b/i.test(query);
+          const hasMultipleJoins = (query.match(/\bJOIN\b/gi) || []).length > 1;
+          
+          // Complex query detection
+          if (hasAggregates || hasGroupBy || hasHaving || hasMultipleJoins) {
+            throw new Error(
+              '⚠️ Complex SQL Query Detected\n\n' +
+              'This query contains advanced SQL features that cannot be executed directly via PostgREST:\n' +
+              (hasAggregates ? '• Aggregate functions (COUNT, SUM, AVG, etc.)\n' : '') +
+              (hasGroupBy ? '• GROUP BY clause\n' : '') +
+              (hasHaving ? '• HAVING clause\n' : '') +
+              (hasMultipleJoins ? '• Multiple JOINs\n' : '') +
+              '\n📋 The SQL is preserved in the editor for reference.\n\n' +
+              '💡 To execute this query:\n' +
+              '1. Use the Cloud View → Run SQL feature\n' +
+              '2. Or create a database VIEW for reusable complex queries\n' +
+              '3. The analytics widgets on the Dashboard already visualize this data'
+            );
+          }
+          
           // Check for JOINs - PostgREST doesn't support them directly
           if (/\bJOIN\b/i.test(query)) {
             const parsed = parseSimpleJoinSelect(query);
@@ -793,14 +816,6 @@ export default function QueryDebugger() {
             result = await executeSimpleJoinSelect(parsed);
             // Short-circuit: result already contains data/error
           } else {
-            // Check for aggregate functions - these aren't supported in PostgREST .select()
-            const aggregateFunctions = /\b(AVG|COUNT|SUM|MIN|MAX|GROUP BY)\s*\(/i;
-            if (aggregateFunctions.test(columns) || /GROUP BY/i.test(query)) {
-              throw new Error(
-                'Aggregate functions (AVG, COUNT, SUM, MIN, MAX) and GROUP BY are not supported in direct queries. ' +
-                  'Use the kpi_case_success view for pre-calculated metrics, or fetch raw data and calculate in JavaScript.'
-              );
-            }
             
             // Strip table aliases from column names (e.g., "fc.*, ca.assigned_at" -> "*, assigned_at")
             if (columns !== '*' && columns.includes('.')) {
