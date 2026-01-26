@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import HighRiskAlerts from '@/components/notifications/HighRiskAlerts';
+import RealtimeNotifications from '@/components/notifications/RealtimeNotifications';
 import {
   Shield,
   LayoutDashboard,
@@ -230,6 +231,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Real-time HIGH risk alerts for admins */}
       <HighRiskAlerts />
+      
+      {/* Real-time notifications for new cases (admin) and assignments (investigator) */}
+      <RealtimeNotifications />
     </div>
   );
 }
