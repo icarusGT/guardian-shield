@@ -498,7 +498,16 @@ export default function QueryDebugger() {
         if (detectedType === 'select' && tableName) {
           // Parse SELECT query to extract columns and filters
           const selectMatch = query.match(/SELECT\s+(.+?)\s+FROM/i);
-          const columns = selectMatch?.[1] || '*';
+          let columns = selectMatch?.[1] || '*';
+          
+          // Check for JOINs - PostgREST doesn't support them directly
+          if (/\bJOIN\b/i.test(query)) {
+            throw new Error(
+              'JOIN queries are not supported. Use PostgREST embedding syntax instead. ' +
+              'For example: select("*, case_assignments(assigned_at, investigator_id)") ' +
+              'or query tables separately and combine results in JavaScript.'
+            );
+          }
           
           // Check for aggregate functions - these aren't supported in PostgREST .select()
           const aggregateFunctions = /\b(AVG|COUNT|SUM|MIN|MAX|GROUP BY)\s*\(/i;
@@ -507,6 +516,20 @@ export default function QueryDebugger() {
               'Aggregate functions (AVG, COUNT, SUM, MIN, MAX) and GROUP BY are not supported in direct queries. ' +
               'Use the kpi_case_success view for pre-calculated metrics, or fetch raw data and calculate in JavaScript.'
             );
+          }
+          
+          // Strip table aliases from column names (e.g., "fc.*, ca.assigned_at" -> "*, assigned_at")
+          if (columns !== '*' && columns.includes('.')) {
+            columns = columns
+              .split(',')
+              .map(col => {
+                const trimmed = col.trim();
+                // Handle "table.*" -> "*"
+                if (trimmed.match(/^\w+\.\*$/)) return '*';
+                // Handle "table.column" -> "column"
+                return trimmed.includes('.') ? trimmed.split('.').pop()! : trimmed;
+              })
+              .join(', ');
           }
           
           const whereMatch = query.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
