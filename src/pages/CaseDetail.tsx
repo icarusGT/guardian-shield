@@ -1,4 +1,4 @@
-// Last updated: 25th January 2025
+// Last updated: 26th January 2026
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -22,6 +22,10 @@ import {
   FileIcon,
   MessageSquare,
   Gavel,
+  CreditCard,
+  AlertTriangle,
+  DollarSign,
+  MapPin,
 } from 'lucide-react';
 
 interface FraudCase {
@@ -79,6 +83,18 @@ interface AssignedInvestigator {
   assigned_at: string | null;
 }
 
+interface LinkedTransaction {
+  txn_id: number;
+  txn_amount: number;
+  txn_channel: string;
+  txn_location: string | null;
+  recipient_account: string | null;
+  occurred_at: string;
+  risk_score?: number;
+  risk_level?: string;
+  reasons?: string;
+}
+
 const severityColors: Record<string, string> = {
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
@@ -104,6 +120,7 @@ export default function CaseDetail() {
   const [caseFeedback, setCaseFeedback] = useState<CaseFeedback[]>([]);
   const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
   const [myInvestigatorId, setMyInvestigatorId] = useState<number | null>(null);
+  const [linkedTransactions, setLinkedTransactions] = useState<LinkedTransaction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadNote, setUploadNote] = useState('');
@@ -188,6 +205,48 @@ export default function CaseDetail() {
 
     if (decisionsResult) {
       setCaseDecisions(decisionsResult as unknown as CaseDecision[]);
+    }
+
+    // Fetch linked transactions with suspicious info
+    const { data: caseTransactions } = await supabase
+      .from('case_transactions')
+      .select('txn_id')
+      .eq('case_id', parseInt(caseId));
+
+    if (caseTransactions && caseTransactions.length > 0) {
+      const txnIds = caseTransactions.map((ct) => ct.txn_id);
+      
+      // Fetch transactions
+      const { data: txnData } = await supabase
+        .from('transactions')
+        .select('*')
+        .in('txn_id', txnIds);
+
+      // Fetch suspicious transaction info
+      const { data: suspData } = await supabase
+        .from('suspicious_transactions')
+        .select('txn_id, risk_score, risk_level, reasons')
+        .in('txn_id', txnIds);
+
+      if (txnData) {
+        const txnsWithRisk: LinkedTransaction[] = txnData.map((txn) => {
+          const suspInfo = suspData?.find((s) => s.txn_id === txn.txn_id);
+          return {
+            txn_id: txn.txn_id,
+            txn_amount: txn.txn_amount,
+            txn_channel: txn.txn_channel,
+            txn_location: txn.txn_location,
+            recipient_account: txn.recipient_account,
+            occurred_at: txn.occurred_at,
+            risk_score: suspInfo?.risk_score,
+            risk_level: suspInfo?.risk_level,
+            reasons: suspInfo?.reasons,
+          };
+        });
+        setLinkedTransactions(txnsWithRisk);
+      }
+    } else {
+      setLinkedTransactions([]);
     }
 
     // Fetch my investigator ID if I'm an investigator
@@ -363,6 +422,89 @@ export default function CaseDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Linked Transaction(s) - Read-only Evidence Section */}
+            {linkedTransactions.length > 0 && (
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-amber-600" />
+                    Linked Transaction Evidence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {linkedTransactions.map((txn) => (
+                    <div
+                      key={txn.txn_id}
+                      className="p-4 bg-background rounded-lg border space-y-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-primary" />
+                          <span className="text-lg font-bold">
+                            ৳{txn.txn_amount.toLocaleString()}
+                          </span>
+                          <Badge variant="outline">{txn.txn_channel}</Badge>
+                        </div>
+                        {txn.risk_level && (
+                          <Badge
+                            className={
+                              txn.risk_level === 'HIGH'
+                                ? 'bg-red-100 text-red-700'
+                                : txn.risk_level === 'MEDIUM'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-green-100 text-green-700'
+                            }
+                          >
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            {txn.risk_level} Risk
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {txn.recipient_account && (
+                          <div>
+                            <p className="text-muted-foreground">Recipient</p>
+                            <p className="font-medium">{txn.recipient_account}</p>
+                          </div>
+                        )}
+                        {txn.txn_location && (
+                          <div>
+                            <p className="text-muted-foreground">Location</p>
+                            <p className="font-medium flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {txn.txn_location}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-muted-foreground">Transaction Time</p>
+                          <p className="font-medium">
+                            {new Date(txn.occurred_at).toLocaleString()}
+                          </p>
+                        </div>
+                        {txn.risk_score !== undefined && (
+                          <div>
+                            <p className="text-muted-foreground">Risk Score</p>
+                            <p className="font-medium">{txn.risk_score} points</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {txn.reasons && (
+                        <div className="pt-2 border-t">
+                          <p className="text-xs text-muted-foreground mb-1">
+                            Risk Factors
+                          </p>
+                          <p className="text-sm text-amber-700">{txn.reasons}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Evidence Upload */}
             <Card>

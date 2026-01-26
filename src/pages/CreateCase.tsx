@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 26th January 2026
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, FileText, AlertCircle, Loader2, User } from 'lucide-react';
+import { ArrowLeft, FileText, AlertCircle, Loader2, User, DollarSign, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -44,12 +44,20 @@ export default function CreateCase() {
     severity: 'LOW' as 'LOW' | 'MEDIUM' | 'HIGH',
   });
 
+  // Transaction details (embedded for customers)
+  const [txnData, setTxnData] = useState({
+    txn_amount: '',
+    txn_channel: 'OTHER' as 'BKASH' | 'NAGAD' | 'CARD' | 'BANK' | 'CASH' | 'OTHER',
+    recipient_account: '',
+    txn_location: '',
+    occurred_at: '',
+  });
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
       return;
     }
-    // All authenticated users can create cases
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -81,7 +89,6 @@ export default function CreateCase() {
           // For Admin, Investigator, and Auditor - fetch list of customers for selection
           setShowCustomerSelector(true);
 
-          // Fetch customers with user info
           const { data: customersData, error: customersError } = await supabase
             .from('customers')
             .select('customer_id, user_id')
@@ -92,15 +99,12 @@ export default function CreateCase() {
           }
 
           if (customersData && customersData.length > 0) {
-            // Fetch user details for each customer
-            // SECURITY: Use users_safe view to exclude password_hash column
             const userIds = customersData.map((c) => c.user_id);
             const { data: usersData } = await supabase
               .from('users_safe')
               .select('user_id, full_name, email')
               .in('user_id', userIds);
 
-            // Combine customer and user data
             const customersWithNames = customersData.map((customer) => {
               const userData = usersData?.find((u) => u.user_id === customer.user_id);
               return {
@@ -113,7 +117,6 @@ export default function CreateCase() {
 
             setCustomers(customersWithNames);
 
-            // Auto-select first customer if available
             if (customersWithNames.length > 0) {
               setCustomerId(customersWithNames[0].customer_id);
             } else {
@@ -149,10 +152,19 @@ export default function CreateCase() {
       return;
     }
 
+    // For customers, transaction details are required
+    if (isCustomer) {
+      if (!txnData.txn_amount || parseFloat(txnData.txn_amount) <= 0) {
+        toast.error('Please enter a valid transaction amount');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
-      const { data, error } = await supabase
+      // Step 1: Create the fraud case
+      const { data: caseResult, error: caseError } = await supabase
         .from('fraud_cases')
         .insert({
           customer_id: customerId,
@@ -165,12 +177,65 @@ export default function CreateCase() {
         .select()
         .single();
 
-      if (error) {
-        throw error;
+      if (caseError) {
+        throw caseError;
+      }
+
+      const newCaseId = caseResult.case_id;
+
+      // Step 2: If customer, create the linked transaction
+      if (isCustomer && txnData.txn_amount) {
+        const txnPayload: {
+          customer_id: number;
+          txn_amount: number;
+          txn_channel: 'BKASH' | 'NAGAD' | 'CARD' | 'BANK' | 'CASH' | 'OTHER';
+          recipient_account: string | null;
+          txn_location: string | null;
+          occurred_at?: string;
+        } = {
+          customer_id: customerId,
+          txn_amount: parseFloat(txnData.txn_amount),
+          txn_channel: txnData.txn_channel,
+          recipient_account: txnData.recipient_account || null,
+          txn_location: txnData.txn_location || null,
+        };
+
+        // Add occurred_at if provided
+        if (txnData.occurred_at) {
+          txnPayload.occurred_at = new Date(txnData.occurred_at).toISOString();
+        }
+
+        const { data: txnResult, error: txnError } = await supabase
+          .from('transactions')
+          .insert(txnPayload)
+          .select()
+          .single();
+
+        if (txnError) {
+          console.error('Transaction creation error:', txnError);
+          // Case was created but transaction failed - still navigate but warn
+          toast.warning('Case created but transaction details could not be saved. Please add manually.');
+          navigate(`/cases/${newCaseId}`);
+          return;
+        }
+
+        // Step 3: Link transaction to case
+        const { error: linkError } = await supabase
+          .from('case_transactions')
+          .insert({
+            case_id: newCaseId,
+            txn_id: txnResult.txn_id,
+          });
+
+        if (linkError) {
+          console.error('Case-transaction link error:', linkError);
+          // Transaction was created but link failed
+          toast.warning('Case and transaction created but linking failed. Please contact support.');
+        }
       }
 
       toast.success('Case created successfully!');
-      navigate(`/cases/${data.case_id}`);
+      navigate(`/cases/${newCaseId}`);
     } catch (error: any) {
       console.error('Error creating case:', error);
       toast.error(`Failed to create case: ${error.message || 'Unknown error'}`);
@@ -211,7 +276,7 @@ export default function CreateCase() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Create New Case</h1>
+              <h1 className="text-3xl font-bold">Report Fraud Case</h1>
             </div>
           </div>
           <Card className="border-destructive">
@@ -242,32 +307,34 @@ export default function CreateCase() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Create New Case</h1>
+            <h1 className="text-3xl font-bold">
+              {isCustomer ? 'Report Fraud Case' : 'Create New Case'}
+            </h1>
             <p className="text-muted-foreground mt-1">
               {isCustomer
-                ? 'Report a new fraud case for investigation'
+                ? 'Report a fraud case with transaction details as evidence'
                 : `Create a new fraud case as ${getRoleName()}`}
             </p>
           </div>
         </div>
 
-        {/* Form Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg gradient-primary">
-                <FileText className="h-5 w-5 text-white" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Case Information Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg gradient-primary">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle>Case Information</CardTitle>
+                  <CardDescription>
+                    Describe the fraud incident you want to report
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle>Case Information</CardTitle>
-                <CardDescription>
-                  Provide details about the fraud case you want to report
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            </CardHeader>
+            <CardContent className="space-y-6">
               {/* Customer Selector (for non-customers) */}
               {showCustomerSelector && customers.length > 0 && (
                 <div className="space-y-2">
@@ -323,7 +390,7 @@ export default function CreateCase() {
                 </Label>
                 <Input
                   id="title"
-                  placeholder="e.g., Unauthorized transaction on account"
+                  placeholder="e.g., Unauthorized transaction on my account"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
@@ -339,10 +406,10 @@ export default function CreateCase() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Provide detailed information about the fraud case, including dates, amounts, and any relevant details..."
+                  placeholder="Describe what happened, when it occurred, and any suspicious details..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={6}
+                  rows={4}
                   maxLength={2000}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -374,7 +441,6 @@ export default function CreateCase() {
                       <SelectItem value="OTHER">Other</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Type of fraud case</p>
                 </div>
 
                 {/* Severity */}
@@ -412,69 +478,193 @@ export default function CreateCase() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Urgency level of the case</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Info Alert */}
-              <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <p className="font-medium mb-1">Important Information</p>
-                  <ul className="list-disc list-inside space-y-1 text-blue-800">
-                    <li>Your case will be reviewed by our investigation team</li>
-                    <li>You can upload evidence files after creating the case</li>
-                    <li>Case status updates will be visible in your dashboard</li>
-                    {isInvestigator || isAdmin ? (
-                      <li>You can assign this case to an investigator after creation</li>
-                    ) : (
-                      <li>An investigator will be assigned to your case shortly</li>
-                    )}
-                  </ul>
+          {/* Transaction Details Card - Only for Customers */}
+          {isCustomer && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-amber-500">
+                    <CreditCard className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle>Transaction Details</CardTitle>
+                    <CardDescription>
+                      Provide details of the suspicious transaction as evidence
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Amount */}
+                  <div className="space-y-2">
+                    <Label htmlFor="txn_amount">
+                      Amount (BDT) <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="txn_amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={txnData.txn_amount}
+                        onChange={(e) =>
+                          setTxnData({ ...txnData, txn_amount: e.target.value })
+                        }
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              {/* Role-specific note */}
-              {!isCustomer && customerId && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> Creating case as {getRoleName()} for customer ID:{' '}
-                    {customerId}
-                  </p>
+                  {/* Payment Channel */}
+                  <div className="space-y-2">
+                    <Label htmlFor="txn_channel">
+                      Payment Channel <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={txnData.txn_channel}
+                      onValueChange={(value: typeof txnData.txn_channel) =>
+                        setTxnData({ ...txnData, txn_channel: value })
+                      }
+                    >
+                      <SelectTrigger id="txn_channel">
+                        <SelectValue placeholder="Select channel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BKASH">bKash</SelectItem>
+                        <SelectItem value="NAGAD">Nagad</SelectItem>
+                        <SelectItem value="CARD">Card</SelectItem>
+                        <SelectItem value="BANK">Bank Transfer</SelectItem>
+                        <SelectItem value="CASH">Cash</SelectItem>
+                        <SelectItem value="OTHER">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Recipient Account */}
+                  <div className="space-y-2">
+                    <Label htmlFor="recipient_account">Recipient Account/Number</Label>
+                    <Input
+                      id="recipient_account"
+                      type="text"
+                      placeholder="e.g., 01XXXXXXXXX"
+                      value={txnData.recipient_account}
+                      onChange={(e) =>
+                        setTxnData({ ...txnData, recipient_account: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-2">
+                    <Label htmlFor="txn_location">Transaction Location</Label>
+                    <Input
+                      id="txn_location"
+                      type="text"
+                      placeholder="e.g., Dhaka, Chittagong"
+                      value={txnData.txn_location}
+                      onChange={(e) =>
+                        setTxnData({ ...txnData, txn_location: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  {/* Transaction Time */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="occurred_at">Transaction Time (Optional)</Label>
+                    <Input
+                      id="occurred_at"
+                      type="datetime-local"
+                      value={txnData.occurred_at}
+                      onChange={(e) =>
+                        setTxnData({ ...txnData, occurred_at: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When did the suspicious transaction occur? Leave blank if unknown.
+                    </p>
+                  </div>
                 </div>
+
+                <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-900">
+                    <p className="font-medium mb-1">Transaction as Evidence</p>
+                    <p className="text-amber-800">
+                      This transaction will be automatically analyzed for fraud patterns. 
+                      High-risk transactions may result in case severity being upgraded.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Info Alert */}
+          <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <p className="font-medium mb-1">What Happens Next</p>
+              <ul className="list-disc list-inside space-y-1 text-blue-800">
+                <li>Your case will be reviewed by our investigation team</li>
+                <li>You can upload additional evidence files after creating the case</li>
+                <li>Case status updates will be visible in your dashboard</li>
+                {isInvestigator || isAdmin ? (
+                  <li>You can assign this case to an investigator after creation</li>
+                ) : (
+                  <li>An investigator will be assigned to your case shortly</li>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          {/* Role-specific note */}
+          {!isCustomer && customerId && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Note:</strong> Creating case as {getRoleName()} for customer ID:{' '}
+                {customerId}
+              </p>
+            </div>
+          )}
+
+          {/* Submit Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/cases')}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="gradient-primary flex-1"
+              disabled={submitting || !customerId || loadingCustomer}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Case...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {isCustomer ? 'Submit Report' : 'Create Case'}
+                </>
               )}
-
-              {/* Submit Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button
-                  type="submit"
-                  className="gradient-primary flex-1"
-                  disabled={submitting || !customerId || loadingCustomer}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating Case...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Create Case
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/cases')}
-                  disabled={submitting}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </Button>
+          </div>
+        </form>
       </div>
     </AppLayout>
   );

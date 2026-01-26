@@ -1,36 +1,18 @@
-import { useEffect, useState } from 'react';
+// Last updated: 26th January 2026
+// Standalone transaction creation is deprecated.
+// Transactions are now created as part of fraud case reports.
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, DollarSign } from 'lucide-react';
+import { AlertCircle, FileText, ArrowRight } from 'lucide-react';
 
 export default function CreateTransaction() {
   const { user, loading, profile } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    txn_amount: '',
-    txn_location: '',
-    recipient_account: '',
-    txn_channel: 'OTHER' as 'BKASH' | 'NAGAD' | 'CARD' | 'BANK' | 'CASH' | 'OTHER',
-  });
-
-  // Avoid navigation side-effects during render
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth', { replace: true });
@@ -47,39 +29,25 @@ export default function CreateTransaction() {
 
   if (!user) return null;
 
-  // Wait for profile (RBAC) to load
-  if (!profile) {
-    return (
-      <AppLayout>
-        <div className="max-w-2xl mx-auto">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Loading your profile…</CardTitle>
-              <CardDescription>Please wait a moment.</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // This page is only for customers. Investigators/admins/auditors shouldn't hit the customer lookup.
-  if (profile.role_id !== 4) {
+  // Redirect non-customers to transactions list
+  if (profile && profile.role_id !== 4) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto space-y-6">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle>Access restricted</CardTitle>
+              <CardTitle>Access Restricted</CardTitle>
               <CardDescription>
-                Transaction requests can only be submitted by customers.
+                This page is only available to customers.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-3">
               <Button variant="outline" onClick={() => navigate(-1)}>
-                Go back
+                Go Back
               </Button>
-              <Button onClick={() => navigate('/transactions')}>Go to Transactions</Button>
+              <Button onClick={() => navigate('/transactions')}>
+                View Transactions
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -87,182 +55,68 @@ export default function CreateTransaction() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.txn_amount || parseFloat(formData.txn_amount) <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid transaction amount.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      // Get the customer_id from customers table using auth user id
-      // IMPORTANT: Avoid `.single()` here because it returns a 406 error when 0 rows are found.
-      const { data: customerRows, error: customerError } = await supabase
-        .from('customers')
-        .select('customer_id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (customerError) throw customerError;
-
-      const customerId = customerRows?.[0]?.customer_id;
-      if (!customerId) {
-        throw new Error('Could not find your customer profile. Please contact support.');
-      }
-
-      const { error } = await supabase.from('transactions').insert({
-        customer_id: customerId,
-        txn_amount: parseFloat(formData.txn_amount),
-        txn_location: formData.txn_location || null,
-        recipient_account: formData.recipient_account || null,
-        txn_channel: formData.txn_channel,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Transaction Submitted',
-        description: 'Your transaction request has been sent for review.',
-      });
-
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Error creating transaction:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit transaction request.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Create Transaction Request</h1>
-            <p className="text-muted-foreground">
-              Submit a new transaction for processing
-            </p>
-          </div>
-        </div>
-
-        <Card className="glass-card">
+        <Card className="border-primary/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              Transaction Details
-            </CardTitle>
-            <CardDescription>
-              Fill in the details for your transaction request. It will be reviewed by our team.
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <AlertCircle className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Transaction Reporting Has Changed</CardTitle>
+                <CardDescription>
+                  Transactions are now reported as part of fraud cases
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="txn_amount">Amount (BDT) *</Label>
-                <Input
-                  id="txn_amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Enter amount"
-                  value={formData.txn_amount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, txn_amount: e.target.value })
-                  }
-                  required
-                />
-              </div>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg space-y-3">
+              <p className="text-sm text-muted-foreground">
+                To better protect you and streamline our fraud investigation process, 
+                suspicious transactions are now reported directly within fraud cases.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                When you create a fraud case, you'll be able to add transaction details 
+                as evidence. This helps our investigators understand the full context 
+                of your report.
+              </p>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="txn_channel">Payment Channel *</Label>
-                <Select
-                  value={formData.txn_channel}
-                  onValueChange={(value: typeof formData.txn_channel) =>
-                    setFormData({ ...formData, txn_channel: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select channel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BKASH">bKash</SelectItem>
-                    <SelectItem value="NAGAD">Nagad</SelectItem>
-                    <SelectItem value="CARD">Card</SelectItem>
-                    <SelectItem value="BANK">Bank Transfer</SelectItem>
-                    <SelectItem value="CASH">Cash</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="recipient_account">Recipient Account/Number</Label>
-                <Input
-                  id="recipient_account"
-                  type="text"
-                  placeholder="Enter recipient phone/account number"
-                  value={formData.recipient_account}
-                  onChange={(e) =>
-                    setFormData({ ...formData, recipient_account: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="txn_location">Location (Optional)</Label>
-                <Input
-                  id="txn_location"
-                  type="text"
-                  placeholder="Enter location (e.g., Dhaka, Chittagong)"
-                  value={formData.txn_location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, txn_location: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 gradient-primary"
-                >
-                  {submitting ? (
-                    'Submitting...'
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Submit Transaction
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/cases')}
+                className="flex-1"
+              >
+                View My Cases
+              </Button>
+              <Button
+                onClick={() => navigate('/cases/new')}
+                className="flex-1 gradient-primary"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Report Fraud Case
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        <div className="flex gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-900">
+            <p className="font-medium mb-1">How It Works Now</p>
+            <ul className="list-disc list-inside space-y-1 text-blue-800">
+              <li>Click "Report Fraud Case" to create a new case</li>
+              <li>Fill in case details (title, description, category)</li>
+              <li>Add transaction details in the evidence section</li>
+              <li>Our system will automatically analyze the transaction for fraud patterns</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
