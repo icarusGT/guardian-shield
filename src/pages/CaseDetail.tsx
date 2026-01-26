@@ -158,16 +158,16 @@ export default function CaseDetail() {
     if (caseResult) {
       setCaseData(caseResult as unknown as FraudCase);
       
-      // Fetch reported user info via customer_id -> customers -> users
+      // Fetch reported user info via customer_id -> customers_safe -> users_safe (using views for proper access)
       const { data: customerData } = await supabase
-        .from('customers')
+        .from('customers_safe')
         .select('user_id')
         .eq('customer_id', caseResult.customer_id)
         .maybeSingle();
       
       if (customerData?.user_id) {
         const { data: userData } = await supabase
-          .from('users')
+          .from('users_safe')
           .select('user_id, full_name, email')
           .eq('user_id', customerData.user_id)
           .maybeSingle();
