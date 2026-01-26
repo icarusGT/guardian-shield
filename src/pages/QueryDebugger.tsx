@@ -107,6 +107,235 @@ interface QueryExecution {
   };
 }
 
+type JoinType = 'INNER' | 'LEFT';
+
+type ParsedColumnRef = {
+  alias?: string;
+  column: string;
+};
+
+type ParsedSimpleJoinSelect = {
+  selectRaw: string;
+  base: { table: string; alias?: string; key: ParsedColumnRef };
+  join: { table: string; alias?: string; key: ParsedColumnRef; type: JoinType };
+  selectedBaseAll: boolean;
+  selectedJoinAll: boolean;
+  selectedBaseColumns: string[];
+  selectedJoinColumns: string[];
+  whereEq?: { column: ParsedColumnRef; value: string };
+  orderBy?: { column: ParsedColumnRef; ascending: boolean };
+  limit?: number;
+};
+
+const normalizeSql = (sql: string) => sql.replace(/\s+/g, ' ').trim();
+
+const parseColumnRef = (expr: string): ParsedColumnRef => {
+  const clean = expr.trim().replace(/[,;]/g, '');
+  const parts = clean.split('.').map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 1) return { column: parts[0] };
+  return { alias: parts[0], column: parts[1] };
+};
+
+const parseSimpleJoinSelect = (sql: string): ParsedSimpleJoinSelect | null => {
+  const q = normalizeSql(sql);
+  if (!q.toUpperCase().startsWith('SELECT ')) return null;
+  if (!/\bJOIN\b/i.test(q)) return null;
+
+  const selectMatch = q.match(/SELECT\s+(.+?)\s+FROM\s+/i);
+  const fromMatch = q.match(/FROM\s+(\w+)(?:\s+(\w+))?\s+/i);
+  const joinMatch = q.match(/\s(LEFT\s+JOIN|JOIN)\s+(\w+)(?:\s+(\w+))?\s+ON\s+([^\s]+)\s*=\s*([^\s]+)\s*/i);
+
+  if (!selectMatch || !fromMatch || !joinMatch) return null;
+
+  const selectRaw = selectMatch[1].trim();
+  const baseTable = fromMatch[1];
+  const baseAlias = fromMatch[2];
+
+  const joinType: JoinType = /LEFT\s+JOIN/i.test(joinMatch[1]) ? 'LEFT' : 'INNER';
+  const joinTable = joinMatch[2];
+  const joinAlias = joinMatch[3];
+  const onLeft = parseColumnRef(joinMatch[4]);
+  const onRight = parseColumnRef(joinMatch[5]);
+
+  // Determine which side belongs to which table by alias
+  const baseKey = (onLeft.alias && onLeft.alias === baseAlias) || (!onLeft.alias && !baseAlias)
+    ? onLeft
+    : onRight;
+  const joinKey = baseKey === onLeft ? onRight : onLeft;
+
+  // WHERE (only support simple equality)
+  const whereMatch = q.match(/WHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+LIMIT|$)/i);
+  let whereEq: ParsedSimpleJoinSelect['whereEq'] = undefined;
+  if (whereMatch) {
+    const whereClause = whereMatch[1].trim();
+    const eqMatch = whereClause.match(/^([^=]+)=\s*(.+)$/);
+    if (eqMatch) {
+      const colRef = parseColumnRef(eqMatch[1]);
+      const rawVal = eqMatch[2].trim();
+      const cleanVal = rawVal.replace(/^'+|'+$/g, '').replace(/^"+|"+$/g, '');
+      whereEq = { column: colRef, value: cleanVal };
+    }
+  }
+
+  // ORDER BY (single column)
+  const orderMatch = q.match(/ORDER\s+BY\s+([^\s,]+)(?:\s+(ASC|DESC))?/i);
+  const orderBy = orderMatch
+    ? { column: parseColumnRef(orderMatch[1]), ascending: (orderMatch[2] || 'ASC').toUpperCase() !== 'DESC' }
+    : undefined;
+
+  // LIMIT
+  const limitMatch = q.match(/LIMIT\s+(\d+)/i);
+  const limit = limitMatch ? Number(limitMatch[1]) : undefined;
+
+  // Selected columns
+  const selectParts = selectRaw.split(',').map((s) => s.trim()).filter(Boolean);
+  const selectedBaseAll = selectParts.some((p) => (baseAlias ? p === `${baseAlias}.*` : p === `${baseTable}.*`) || p === '*');
+  const selectedJoinAll = selectParts.some((p) => (joinAlias ? p === `${joinAlias}.*` : p === `${joinTable}.*`));
+
+  const selectedBaseColumns: string[] = [];
+  const selectedJoinColumns: string[] = [];
+
+  for (const part of selectParts) {
+    if (part === '*') continue;
+    if (baseAlias && part === `${baseAlias}.*`) continue;
+    if (!baseAlias && part === `${baseTable}.*`) continue;
+    if (joinAlias && part === `${joinAlias}.*`) continue;
+    if (!joinAlias && part === `${joinTable}.*`) continue;
+
+    const ref = parseColumnRef(part);
+    if (ref.alias && joinAlias && ref.alias === joinAlias) {
+      selectedJoinColumns.push(ref.column);
+    } else if (ref.alias && baseAlias && ref.alias === baseAlias) {
+      selectedBaseColumns.push(ref.column);
+    } else {
+      // No/unknown alias: assume base table (keeps previous behavior)
+      selectedBaseColumns.push(ref.column);
+    }
+  }
+
+  return {
+    selectRaw,
+    base: { table: baseTable, alias: baseAlias, key: baseKey },
+    join: { table: joinTable, alias: joinAlias, key: joinKey, type: joinType },
+    selectedBaseAll,
+    selectedJoinAll,
+    selectedBaseColumns: Array.from(new Set(selectedBaseColumns)),
+    selectedJoinColumns: Array.from(new Set(selectedJoinColumns)),
+    whereEq,
+    orderBy,
+    limit,
+  };
+};
+
+const uniqueSelectList = (cols: string[]) => Array.from(new Set(cols)).join(', ');
+
+const executeSimpleJoinSelect = async (spec: ParsedSimpleJoinSelect) => {
+  const baseKeyCol = spec.base.key.column;
+  const joinKeyCol = spec.join.key.column;
+
+  const baseSelect = spec.selectedBaseAll
+    ? '*'
+    : uniqueSelectList(Array.from(new Set([baseKeyCol, ...spec.selectedBaseColumns])));
+
+  const joinSelect = spec.selectedJoinAll
+    ? '*'
+    : uniqueSelectList(Array.from(new Set([joinKeyCol, ...spec.selectedJoinColumns])));
+
+  // If ORDER BY references the join table, fetch join rows first to preserve ordering.
+  const orderByOnJoin =
+    spec.orderBy &&
+    spec.join.alias &&
+    spec.orderBy.column.alias === spec.join.alias;
+
+  if (orderByOnJoin) {
+    let joinQB = supabase.from(spec.join.table as any).select(joinSelect);
+    joinQB = joinQB.order(spec.orderBy!.column.column, { ascending: spec.orderBy!.ascending });
+    if (spec.limit) joinQB = joinQB.limit(spec.limit);
+    const joinRes = await joinQB;
+    if (joinRes.error) return joinRes;
+
+    const joinRows = (joinRes.data || []) as any[];
+    const keys = joinRows.map((r) => r?.[joinKeyCol]).filter((v) => v !== null && v !== undefined);
+    if (keys.length === 0) return { data: [], error: null };
+
+    let baseQB = supabase.from(spec.base.table as any).select(baseSelect);
+    baseQB = (baseQB as any).in(baseKeyCol, keys);
+
+    // Optional WHERE (only applied when it targets base table)
+    if (spec.whereEq) {
+      const whereAlias = spec.whereEq.column.alias;
+      if (!whereAlias || whereAlias === spec.base.alias) {
+        baseQB = (baseQB as any).eq(spec.whereEq.column.column, spec.whereEq.value);
+      }
+    }
+
+    const baseRes = await baseQB;
+    if (baseRes.error) return baseRes;
+
+    const baseRows = (baseRes.data || []) as any[];
+    const baseMap = new Map<any, any>();
+    for (const row of baseRows) baseMap.set(row?.[baseKeyCol], row);
+
+    const merged: any[] = [];
+    for (const jr of joinRows) {
+      const key = jr?.[joinKeyCol];
+      const br = baseMap.get(key);
+      if (!br) continue;
+      merged.push({ ...br, ...jr });
+    }
+
+    return { data: merged, error: null };
+  }
+
+  // Default: fetch base first
+  let baseQB = supabase.from(spec.base.table as any).select(baseSelect);
+
+  if (spec.whereEq) {
+    const whereAlias = spec.whereEq.column.alias;
+    if (!whereAlias || whereAlias === spec.base.alias) {
+      baseQB = (baseQB as any).eq(spec.whereEq.column.column, spec.whereEq.value);
+    }
+  }
+
+  if (spec.orderBy) {
+    const orderAlias = spec.orderBy.column.alias;
+    if (!orderAlias || orderAlias === spec.base.alias) {
+      baseQB = baseQB.order(spec.orderBy.column.column, { ascending: spec.orderBy.ascending });
+    }
+  }
+
+  if (spec.limit) baseQB = baseQB.limit(spec.limit);
+
+  const baseRes = await baseQB;
+  if (baseRes.error) return baseRes;
+  const baseRows = (baseRes.data || []) as any[];
+  const keys = baseRows.map((r) => r?.[baseKeyCol]).filter((v) => v !== null && v !== undefined);
+
+  if (keys.length === 0) return { data: [], error: null };
+
+  let joinQB = supabase.from(spec.join.table as any).select(joinSelect);
+  joinQB = (joinQB as any).in(joinKeyCol, keys);
+  const joinRes = await joinQB;
+  if (joinRes.error) return joinRes;
+
+  const joinRows = (joinRes.data || []) as any[];
+  const joinMap = new Map<any, any>();
+  for (const row of joinRows) {
+    const key = row?.[joinKeyCol];
+    if (!joinMap.has(key)) joinMap.set(key, row);
+  }
+
+  const merged = baseRows
+    .map((br) => {
+      const jr = joinMap.get(br?.[baseKeyCol]);
+      if (!jr && spec.join.type === 'INNER') return null;
+      return jr ? { ...br, ...jr } : { ...br };
+    })
+    .filter(Boolean) as any[];
+
+  return { data: merged, error: null };
+};
+
 const PRESET_QUERIES = [
   {
     name: 'Get All Cases',
@@ -502,67 +731,72 @@ export default function QueryDebugger() {
           
           // Check for JOINs - PostgREST doesn't support them directly
           if (/\bJOIN\b/i.test(query)) {
-            throw new Error(
-              'JOIN queries are not supported. Use PostgREST embedding syntax instead. ' +
-              'For example: select("*, case_assignments(assigned_at, investigator_id)") ' +
-              'or query tables separately and combine results in JavaScript.'
-            );
-          }
-          
-          // Check for aggregate functions - these aren't supported in PostgREST .select()
-          const aggregateFunctions = /\b(AVG|COUNT|SUM|MIN|MAX|GROUP BY)\s*\(/i;
-          if (aggregateFunctions.test(columns) || /GROUP BY/i.test(query)) {
-            throw new Error(
-              'Aggregate functions (AVG, COUNT, SUM, MIN, MAX) and GROUP BY are not supported in direct queries. ' +
-              'Use the kpi_case_success view for pre-calculated metrics, or fetch raw data and calculate in JavaScript.'
-            );
-          }
-          
-          // Strip table aliases from column names (e.g., "fc.*, ca.assigned_at" -> "*, assigned_at")
-          if (columns !== '*' && columns.includes('.')) {
-            columns = columns
-              .split(',')
-              .map(col => {
-                const trimmed = col.trim();
-                // Handle "table.*" -> "*"
-                if (trimmed.match(/^\w+\.\*$/)) return '*';
-                // Handle "table.column" -> "column"
-                return trimmed.includes('.') ? trimmed.split('.').pop()! : trimmed;
-              })
-              .join(', ');
-          }
-          
-          const whereMatch = query.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
-          const orderMatch = query.match(/ORDER BY\s+(.+?)(?:\s+LIMIT|$)/i);
-          const limitMatch = query.match(/LIMIT\s+(\d+)/i);
-
-          let queryBuilder = supabase.from(tableName as any).select(columns === '*' ? '*' : columns);
-
-          if (whereMatch) {
-            // Simple WHERE parsing (basic support)
-            const whereClause = whereMatch[1];
-            // This is simplified - in production, you'd want a proper SQL parser
-            if (whereClause.includes('=')) {
-              const [col, val] = whereClause.split('=').map((s) => s.trim());
-              const cleanCol = col.replace(/['"]/g, '');
-              const cleanVal = val.replace(/['"]/g, '');
-              queryBuilder = (queryBuilder as any).eq(cleanCol, cleanVal);
+            const parsed = parseSimpleJoinSelect(query);
+            if (!parsed) {
+              throw new Error(
+                'Only simple single JOIN queries are supported here (one JOIN with an ON key = key). ' +
+                  'Tip: use views like v_case_assigned_investigator for complex relationships.'
+              );
             }
-          }
 
-          if (orderMatch) {
-            const orderClause = orderMatch[1];
-            const [col, dir] = orderClause.split(/\s+/);
-            // Strip table alias prefix (e.g., "fc.created_at" -> "created_at")
-            const cleanCol = col.includes('.') ? col.split('.').pop()! : col;
-            queryBuilder = queryBuilder.order(cleanCol, { ascending: dir?.toUpperCase() !== 'DESC' });
-          }
+            result = await executeSimpleJoinSelect(parsed);
+            // Short-circuit: result already contains data/error
+          } else {
+            // Check for aggregate functions - these aren't supported in PostgREST .select()
+            const aggregateFunctions = /\b(AVG|COUNT|SUM|MIN|MAX|GROUP BY)\s*\(/i;
+            if (aggregateFunctions.test(columns) || /GROUP BY/i.test(query)) {
+              throw new Error(
+                'Aggregate functions (AVG, COUNT, SUM, MIN, MAX) and GROUP BY are not supported in direct queries. ' +
+                  'Use the kpi_case_success view for pre-calculated metrics, or fetch raw data and calculate in JavaScript.'
+              );
+            }
+            
+            // Strip table aliases from column names (e.g., "fc.*, ca.assigned_at" -> "*, assigned_at")
+            if (columns !== '*' && columns.includes('.')) {
+              columns = columns
+                .split(',')
+                .map(col => {
+                  const trimmed = col.trim();
+                  // Handle "table.*" -> "*"
+                  if (trimmed.match(/^\w+\.\*$/)) return '*';
+                  // Handle "table.column" -> "column"
+                  return trimmed.includes('.') ? trimmed.split('.').pop()! : trimmed;
+                })
+                .join(', ');
+            }
+            
+            const whereMatch = query.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
+            const orderMatch = query.match(/ORDER BY\s+(.+?)(?:\s+LIMIT|$)/i);
+            const limitMatch = query.match(/LIMIT\s+(\d+)/i);
 
-          if (limitMatch) {
-            queryBuilder = queryBuilder.limit(parseInt(limitMatch[1]));
-          }
+            let queryBuilder = supabase.from(tableName as any).select(columns === '*' ? '*' : columns);
 
-          result = await queryBuilder;
+            if (whereMatch) {
+              // Simple WHERE parsing (basic support)
+              const whereClause = whereMatch[1];
+              // This is simplified - in production, you'd want a proper SQL parser
+              if (whereClause.includes('=')) {
+                const [col, val] = whereClause.split('=').map((s) => s.trim());
+                const cleanCol = col.replace(/['"]/g, '');
+                const cleanVal = val.replace(/['"]/g, '');
+                queryBuilder = (queryBuilder as any).eq(cleanCol, cleanVal);
+              }
+            }
+
+            if (orderMatch) {
+              const orderClause = orderMatch[1];
+              const [col, dir] = orderClause.split(/\s+/);
+              // Strip table alias prefix (e.g., "fc.created_at" -> "created_at")
+              const cleanCol = col.includes('.') ? col.split('.').pop()! : col;
+              queryBuilder = queryBuilder.order(cleanCol, { ascending: dir?.toUpperCase() !== 'DESC' });
+            }
+
+            if (limitMatch) {
+              queryBuilder = queryBuilder.limit(parseInt(limitMatch[1]));
+            }
+
+            result = await queryBuilder;
+          }
         } else if (detectedType === 'rpc') {
           // For RPC calls, try to extract function name
           const funcMatch = query.match(/(?:CALL|SELECT)\s+(\w+)/i);
