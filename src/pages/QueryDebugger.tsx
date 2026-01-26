@@ -516,6 +516,24 @@ ORDER BY suspicious_txn DESC, avg_risk_score DESC`,
     type: 'select' as const,
   },
   {
+    name: 'Channel Suspicious Ranking + Case Severity',
+    query: `SELECT
+  t.txn_channel AS channel,
+  fc.severity,
+  COUNT(*) AS total_txn,
+  SUM(st.risk_level IN ('MEDIUM','HIGH')) AS suspicious_txn,
+  AVG(st.risk_score) AS avg_risk_score,
+  100.0 * SUM(st.risk_level IN ('MEDIUM','HIGH')) / COUNT(*) AS suspicious_rate_pct
+FROM transactions t
+LEFT JOIN suspicious_transactions st
+  ON st.txn_id = t.txn_id
+LEFT JOIN fraud_cases fc
+  ON fc.case_id = t.case_id
+GROUP BY t.txn_channel, fc.severity
+ORDER BY suspicious_txn DESC, avg_risk_score DESC;`,
+    type: 'select' as const,
+  },
+  {
     name: 'Get Recent Audit Logs (INSERT)',
     query: 'SELECT * FROM audit_log WHERE action_type = \'INSERT\' ORDER BY acted_at DESC LIMIT 50',
     type: 'select' as const,
