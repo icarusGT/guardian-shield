@@ -27,6 +27,7 @@ import DatabaseSchema from "./pages/DatabaseSchema";
 import AdminDecisions from "./pages/AdminDecisions";
 import MyDecisions from "./pages/MyDecisions";
 import AdminFeedback from "./pages/AdminFeedback";
+import ProjectReport from "./pages/ProjectReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/admin-decisions" element={<AdminDecisions />} />
             <Route path="/my-decisions" element={<MyDecisions />} />
             <Route path="/admin-feedback" element={<AdminFeedback />} />
+            <Route path="/project-report" element={<ProjectReport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatAssistance />
