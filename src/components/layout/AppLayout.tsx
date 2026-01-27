@@ -169,10 +169,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-sidebar-primary">
+          <div className="p-2 rounded-lg bg-sidebar-primary">
               <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">FraudGuard</span>
+            <span className="font-bold text-lg">Guardian Shield</span>
           </div>
         </div>
 
