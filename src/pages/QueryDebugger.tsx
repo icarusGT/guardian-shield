@@ -337,44 +337,108 @@ const executeSimpleJoinSelect = async (spec: ParsedSimpleJoinSelect) => {
 };
 
 const PRESET_QUERIES = [
+  // ===== Core Tables =====
   {
     name: 'Get All Cases',
     query: 'SELECT * FROM fraud_cases ORDER BY created_at DESC LIMIT 10',
     type: 'select' as const,
   },
   {
-    name: 'Get All Transactions',
-    query: 'SELECT * FROM transactions ORDER BY occurred_at DESC LIMIT 10',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Suspicious Transactions',
-    query: 'SELECT * FROM suspicious_transactions ORDER BY flagged_at DESC LIMIT 10',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Users',
-    query: 'SELECT * FROM users ORDER BY created_at DESC LIMIT 10',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Case Assignments',
-    query: 'SELECT * FROM case_assignments ORDER BY assigned_at DESC LIMIT 10',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get KPI Data',
-    query: 'SELECT * FROM kpi_case_success',
-    type: 'select' as const,
-  },
-  {
     name: 'Get Open Cases',
-    query: 'SELECT * FROM fraud_cases WHERE status = \'OPEN\' ORDER BY created_at DESC',
+    query: "SELECT * FROM fraud_cases WHERE status = 'OPEN' ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Closed Cases',
+    query: "SELECT * FROM fraud_cases WHERE status = 'CLOSED' ORDER BY closed_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Cases Under Investigation',
+    query: "SELECT * FROM fraud_cases WHERE status = 'UNDER_INVESTIGATION' ORDER BY created_at DESC LIMIT 20",
     type: 'select' as const,
   },
   {
     name: 'Get High Severity Cases',
-    query: 'SELECT * FROM fraud_cases WHERE severity = \'HIGH\' ORDER BY created_at DESC',
+    query: "SELECT * FROM fraud_cases WHERE severity = 'HIGH' ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Payment Fraud Cases',
+    query: "SELECT * FROM fraud_cases WHERE category = 'PAYMENT_FRAUD' ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Identity Theft Cases',
+    query: "SELECT * FROM fraud_cases WHERE category = 'IDENTITY_THEFT' ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Account Takeover Cases',
+    query: "SELECT * FROM fraud_cases WHERE category = 'ACCOUNT_TAKEOVER' ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  // ===== Transactions =====
+  {
+    name: 'Get All Transactions',
+    query: 'SELECT * FROM transactions ORDER BY occurred_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Suspicious Transactions',
+    query: 'SELECT * FROM suspicious_transactions ORDER BY flagged_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get High Risk Transactions',
+    query: "SELECT * FROM suspicious_transactions WHERE risk_level = 'HIGH' ORDER BY risk_score DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Medium Risk Transactions',
+    query: "SELECT * FROM suspicious_transactions WHERE risk_level = 'MEDIUM' ORDER BY risk_score DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Low Risk Transactions',
+    query: "SELECT * FROM suspicious_transactions WHERE risk_level = 'LOW' ORDER BY risk_score DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  // ===== Users & Investigators =====
+  {
+    name: 'Get Users (Safe View)',
+    query: 'SELECT * FROM users_safe ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Active Users',
+    query: "SELECT * FROM users_safe WHERE is_active = true ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Locked Users',
+    query: "SELECT * FROM users_safe WHERE is_locked = true ORDER BY created_at DESC LIMIT 20",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Investigators',
+    query: 'SELECT * FROM investigators WHERE is_available = true ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Unavailable Investigators',
+    query: 'SELECT * FROM investigators WHERE is_available = false ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Customers (Safe View)',
+    query: 'SELECT * FROM customers_safe ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  // ===== Case Management =====
+  {
+    name: 'Get Case Assignments',
+    query: 'SELECT * FROM case_assignments ORDER BY assigned_at DESC LIMIT 20',
     type: 'select' as const,
   },
   {
@@ -388,23 +452,50 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Get Investigators',
-    query: 'SELECT * FROM investigators WHERE is_available = true ORDER BY created_at DESC',
+    name: 'Get Case Feedback',
+    query: 'SELECT * FROM case_feedback ORDER BY created_at DESC LIMIT 20',
     type: 'select' as const,
   },
   {
-    name: 'Get Customers',
-    query: 'SELECT * FROM customers ORDER BY created_at DESC LIMIT 20',
+    name: 'Get Case Decisions',
+    query: 'SELECT * FROM case_decisions ORDER BY created_at DESC LIMIT 20',
     type: 'select' as const,
   },
+  // ===== Views & Analytics =====
+  {
+    name: 'Get Assigned Investigator View',
+    query: 'SELECT * FROM v_case_assigned_investigator ORDER BY assigned_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get KPI Case Success',
+    query: 'SELECT * FROM kpi_case_success',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Channel Suspicious Ranking',
+    query: 'SELECT * FROM v_channel_suspicious_ranking ORDER BY suspicious_txn DESC',
+    type: 'select' as const,
+  },
+  // ===== Audit & Security =====
   {
     name: 'Get Audit Logs',
     query: 'SELECT * FROM audit_log ORDER BY acted_at DESC LIMIT 50',
     type: 'select' as const,
   },
   {
-    name: 'Get Fraud Rules',
-    query: 'SELECT * FROM fraud_rules WHERE is_active = true ORDER BY rule_id',
+    name: 'Get Audit Logs (INSERT)',
+    query: "SELECT * FROM audit_log WHERE action_type = 'INSERT' ORDER BY acted_at DESC LIMIT 50",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Audit Logs (UPDATE)',
+    query: "SELECT * FROM audit_log WHERE action_type = 'UPDATE' ORDER BY acted_at DESC LIMIT 50",
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Audit Logs (DELETE)',
+    query: "SELECT * FROM audit_log WHERE action_type = 'DELETE' ORDER BY acted_at DESC LIMIT 50",
     type: 'select' as const,
   },
   {
@@ -413,83 +504,14 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Get Case Transactions',
-    query: 'SELECT * FROM case_transactions ORDER BY created_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Assigned Investigator View',
-    query: 'SELECT * FROM v_case_assigned_investigator ORDER BY assigned_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get High Risk Transactions',
-    query: 'SELECT * FROM suspicious_transactions WHERE risk_level = \'HIGH\' ORDER BY risk_score DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Active Users',
-    query: 'SELECT * FROM users WHERE is_active = true ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Closed Cases',
-    query: 'SELECT * FROM fraud_cases WHERE status = \'CLOSED\' ORDER BY closed_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Cases Under Investigation',
-    query: 'SELECT * FROM fraud_cases WHERE status = \'UNDER_INVESTIGATION\' ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Medium Risk Transactions',
-    query: 'SELECT * FROM suspicious_transactions WHERE risk_level = \'MEDIUM\' ORDER BY risk_score DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Low Risk Transactions',
-    query: 'SELECT * FROM suspicious_transactions WHERE risk_level = \'LOW\' ORDER BY risk_score DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Payment Fraud Cases',
-    query: 'SELECT * FROM fraud_cases WHERE category = \'PAYMENT_FRAUD\' ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Identity Theft Cases',
-    query: 'SELECT * FROM fraud_cases WHERE category = \'IDENTITY_THEFT\' ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Account Takeover Cases',
-    query: 'SELECT * FROM fraud_cases WHERE category = \'ACCOUNT_TAKEOVER\' ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Recent Transactions (Last 24h)',
-    query: 'SELECT * FROM transactions WHERE occurred_at >= NOW() - INTERVAL \'24 hours\' ORDER BY occurred_at DESC',
-    type: 'select' as const,
-  },
-  {
     name: 'Get Failed Login Attempts',
     query: 'SELECT * FROM login_attempts WHERE success = false ORDER BY attempted_at DESC LIMIT 50',
     type: 'select' as const,
   },
+  // ===== Rules & Configuration =====
   {
-    name: 'Get Locked Users',
-    query: 'SELECT * FROM users WHERE is_locked = true ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Inactive Users',
-    query: 'SELECT * FROM users WHERE is_active = false ORDER BY created_at DESC',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Unavailable Investigators',
-    query: 'SELECT * FROM investigators WHERE is_available = false ORDER BY created_at DESC',
+    name: 'Get Active Fraud Rules',
+    query: 'SELECT * FROM fraud_rules WHERE is_active = true ORDER BY rule_id',
     type: 'select' as const,
   },
   {
@@ -498,8 +520,27 @@ const PRESET_QUERIES = [
     type: 'select' as const,
   },
   {
-    name: 'Channel-wise Suspicious Ranking (Complex)',
-    query: `SELECT
+    name: 'Get Roles',
+    query: 'SELECT * FROM roles ORDER BY role_id',
+    type: 'select' as const,
+  },
+  // ===== Transaction Feedback & Decisions =====
+  {
+    name: 'Get Transaction Feedback',
+    query: 'SELECT * FROM transaction_feedback ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  {
+    name: 'Get Transaction Decisions',
+    query: 'SELECT * FROM transaction_decisions ORDER BY created_at DESC LIMIT 20',
+    type: 'select' as const,
+  },
+  // ===== Complex Queries (Reference Only - Use Cloud SQL) =====
+  {
+    name: '[SQL Reference] Channel Suspicious Ranking',
+    query: `-- This complex query cannot be executed directly via PostgREST
+-- Use the v_channel_suspicious_ranking view instead, or run in Cloud SQL
+SELECT
   t.txn_channel as channel,
   count(*) as total_txn,
   count(*) filter (where st.risk_level in ('MEDIUM','HIGH')) as suspicious_txn,
@@ -516,26 +557,10 @@ ORDER BY suspicious_txn DESC, avg_risk_score DESC`,
     type: 'select' as const,
   },
   {
-    name: 'Channel Suspicious Ranking + Case Severity',
-    query: `SELECT
-  t.txn_channel AS channel,
-  fc.severity,
-  COUNT(*) AS total_txn,
-  SUM(st.risk_level IN ('MEDIUM','HIGH')) AS suspicious_txn,
-  AVG(st.risk_score) AS avg_risk_score,
-  100.0 * SUM(st.risk_level IN ('MEDIUM','HIGH')) / COUNT(*) AS suspicious_rate_pct
-FROM transactions t
-LEFT JOIN suspicious_transactions st
-  ON st.txn_id = t.txn_id
-LEFT JOIN fraud_cases fc
-  ON fc.case_id = t.case_id
-GROUP BY t.txn_channel, fc.severity
-ORDER BY suspicious_txn DESC, avg_risk_score DESC;`,
-    type: 'select' as const,
-  },
-  {
-    name: 'Users with Multiple Fraud Cases',
-    query: `SELECT
+    name: '[SQL Reference] Users with Multiple Cases',
+    query: `-- This complex query cannot be executed directly via PostgREST
+-- Run in Cloud SQL for aggregate analysis
+SELECT
   u.user_id,
   u.full_name,
   COUNT(fc.case_id) AS total_cases,
@@ -545,77 +570,36 @@ JOIN customers c ON c.user_id = u.user_id
 JOIN fraud_cases fc ON fc.customer_id = c.customer_id
 GROUP BY u.user_id, u.full_name
 HAVING COUNT(fc.case_id) >= 2
-ORDER BY total_cases DESC;`,
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Recent Audit Logs (INSERT)',
-    query: 'SELECT * FROM audit_log WHERE action_type = \'INSERT\' ORDER BY acted_at DESC LIMIT 50',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Recent Audit Logs (UPDATE)',
-    query: 'SELECT * FROM audit_log WHERE action_type = \'UPDATE\' ORDER BY acted_at DESC LIMIT 50',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Recent Audit Logs (DELETE)',
-    query: 'SELECT * FROM audit_log WHERE action_type = \'DELETE\' ORDER BY acted_at DESC LIMIT 50',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Cases by Customer',
-    query: 'SELECT fc.*, c.user_id, c.nid_number FROM fraud_cases fc JOIN customers c ON fc.customer_id = c.customer_id ORDER BY fc.created_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Suspicious Transactions',
-    query: 'SELECT * FROM suspicious_transactions ORDER BY risk_score DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Cases with Assigned Investigators (View)',
-    query: 'SELECT * FROM v_case_assigned_investigator ORDER BY assigned_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get KPI Case Success View',
-    query: 'SELECT * FROM kpi_case_success',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get All Fraud Cases',
-    query: 'SELECT case_id, title, status, severity, category, created_at FROM fraud_cases ORDER BY created_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get All Transactions',
-    query: 'SELECT txn_id, txn_amount, txn_channel, txn_location, occurred_at FROM transactions ORDER BY occurred_at DESC LIMIT 20',
-    type: 'select' as const,
-  },
-  {
-    name: 'Get Top Risk Transactions',
-    query: 'SELECT * FROM suspicious_transactions ORDER BY risk_score DESC LIMIT 10',
+ORDER BY total_cases DESC`,
     type: 'select' as const,
   },
 ];
 
 const AVAILABLE_TABLES = [
+  // Core Tables
   'fraud_cases',
   'transactions',
   'suspicious_transactions',
-  'users',
   'case_assignments',
   'case_history',
+  'case_feedback',
+  'case_decisions',
   'evidence_files',
   'investigators',
   'customers',
-  'audit_log',
   'fraud_rules',
   'login_attempts',
-  'case_transactions',
+  'roles',
+  'transaction_feedback',
+  'transaction_decisions',
+  // Views (safe for querying)
+  'users_safe',
+  'customers_safe',
   'kpi_case_success',
   'v_case_assigned_investigator',
+  'v_channel_suspicious_ranking',
+  // Note: 'users' and 'audit_log' require admin privileges
+  // Note: 'case_transactions' has RLS policy issues - use case_assignments instead
 ];
 
 export default function QueryDebugger() {
