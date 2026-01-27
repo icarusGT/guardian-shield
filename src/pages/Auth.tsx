@@ -70,7 +70,7 @@ export default function Auth() {
             <Shield className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">FraudGuard</h1>
+            <h1 className="text-2xl font-bold text-foreground">Guardian Shield</h1>
             <p className="text-sm text-muted-foreground">Fraud Management System</p>
           </div>
         </div>

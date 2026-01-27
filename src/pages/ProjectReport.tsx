@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 const ProjectReport = () => {
   useEffect(() => {
-    document.title = "DBMS Lab Project Report - FraudGuard";
+    document.title = "DBMS Lab Project Report - Guardian Shield";
   }, []);
 
   const handlePrint = () => {
@@ -41,7 +41,7 @@ const ProjectReport = () => {
           </div>
           <h1 className="text-4xl font-bold text-blue-900 mb-4">DBMS Lab Project Report</h1>
           <div className="w-24 h-1 bg-blue-600 mx-auto mb-8"></div>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-2">FraudGuard</h2>
+          <h2 className="text-3xl font-semibold text-gray-800 mb-2">Guardian Shield</h2>
           <p className="text-xl text-gray-600 mb-12">Online Fraud Management System</p>
           
           <div className="mt-8 text-left bg-gray-50 p-8 rounded-lg border w-full max-w-md">
@@ -123,7 +123,7 @@ const ProjectReport = () => {
           <h2 className="section-title">1. Introduction / Overview</h2>
           
           <p className="text-justify mb-6 leading-relaxed">
-            FraudGuard is a comprehensive <strong>Online Fraud Management System</strong> designed to detect, 
+            Guardian Shield is a comprehensive <strong>Online Fraud Management System</strong> designed to detect, 
             investigate, and resolve fraud cases in financial institutions and organizations. The system 
             provides a centralized platform for managing fraud cases from detection to resolution with 
             complete audit trails.
@@ -493,7 +493,7 @@ const ProjectReport = () => {
           <div className="bg-gray-100 p-6 rounded-lg border overflow-x-auto">
             <pre className="text-xs font-mono whitespace-pre leading-tight">{`
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  FraudGuard ERD                                          │
+│                                  Guardian Shield ERD                                          │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 
                                     ┌─────────────┐
@@ -895,7 +895,7 @@ END; $$;`}</pre>
           <h2 className="section-title">13. Conclusion</h2>
           
           <p className="text-justify mb-6 leading-relaxed">
-            FraudGuard is a comprehensive <strong>Online Fraud Management System</strong> that successfully 
+            Guardian Shield is a comprehensive <strong>Online Fraud Management System</strong> that successfully 
             demonstrates the application of DBMS concepts in a real-world scenario.
           </p>
 
@@ -936,7 +936,7 @@ END; $$;`}</pre>
           </div>
 
           <div className="mt-12 text-center text-gray-500 border-t pt-8">
-            <p className="font-semibold">FraudGuard - Online Fraud Management System</p>
+            <p className="font-semibold">Guardian Shield - Online Fraud Management System</p>
             <p>Report Generated: January 2026</p>
           </div>
         </div>
