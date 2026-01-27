@@ -3,7 +3,7 @@
 ---
 
 ## Project Title
-**FraudGuard - Online Fraud Management System**
+**Guardian Shield - Online Fraud Management System**
 
 ---
 
@@ -35,7 +35,7 @@
 
 ## 1. Introduction / Overview
 
-FraudGuard is a comprehensive **Online Fraud Management System** designed to detect, investigate, and resolve fraud cases in financial institutions and organizations. The system provides a centralized platform for managing fraud cases from detection to resolution with complete audit trails.
+Guardian Shield is a comprehensive **Online Fraud Management System** designed to detect, investigate, and resolve fraud cases in financial institutions and organizations. The system provides a centralized platform for managing fraud cases from detection to resolution with complete audit trails.
 
 ### Key Capabilities:
 - **Real-time fraud detection** with automated risk scoring
@@ -71,14 +71,14 @@ Financial fraud is a growing concern in the digital economy. Organizations face 
 
 ## 3. Related or Similar Projects
 
-| System | Description | Limitations Addressed by FraudGuard |
+| System | Description | Limitations Addressed by Guardian Shield |
 |--------|-------------|-------------------------------------|
 | **FICO Falcon** | Commercial fraud detection platform | Complex, expensive, not customizable |
 | **Feedzai** | AI-powered fraud prevention | Requires ML expertise, costly |
 | **SAS Fraud Management** | Enterprise fraud solution | Heavy infrastructure needs |
 | **Custom Excel/Sheets** | Manual tracking | No automation, no security, no audit trail |
 
-### FraudGuard Advantages:
+### Guardian Shield Advantages:
 - Open-source friendly technology stack
 - Role-based access built-in
 - Customizable fraud rules
@@ -90,7 +90,7 @@ Financial fraud is a growing concern in the digital economy. Organizations face 
 
 ## 4. Benchmark Analysis
 
-| Feature | FraudGuard | Traditional Systems |
+| Feature | Guardian Shield | Traditional Systems |
 |---------|------------|---------------------|
 | Real-time Detection | ✅ Yes | ⚠️ Limited |
 | Role-based Access | ✅ 4 roles (Admin, Investigator, Auditor, Customer) | ⚠️ Basic |
@@ -219,7 +219,7 @@ All tables are normalized to **Third Normal Form (3NF)**:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  FraudGuard ERD                                          │
+│                                  Guardian Shield ERD                                          │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 
                                     ┌─────────────┐
@@ -762,7 +762,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.case_assignments;
 
 ## 13. Conclusion
 
-FraudGuard is a comprehensive **Online Fraud Management System** that successfully demonstrates the application of DBMS concepts in a real-world scenario.
+Guardian Shield is a comprehensive **Online Fraud Management System** that successfully demonstrates the application of DBMS concepts in a real-world scenario.
 
 ### Key Achievements
 
@@ -840,4 +840,4 @@ supabase/
 ---
 
 *Report Generated: January 2026*
-*FraudGuard - Online Fraud Management System*
+*Guardian Shield - Online Fraud Management System*

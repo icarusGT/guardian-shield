@@ -20,7 +20,7 @@ export default function ChatAssistance() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your FraudGuard assistant. How can I help you today?',
+      text: 'Hello! I\'m your Guardian Shield assistant. How can I help you today?',
       sender: 'assistant',
       timestamp: new Date(),
     },
@@ -92,10 +92,10 @@ export default function ChatAssistance() {
     }
 
     if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
-      return 'Hello! I\'m here to help you navigate FraudGuard. What would you like to know?';
+      return 'Hello! I\'m here to help you navigate Guardian Shield. What would you like to know?';
     }
 
-    return 'Thank you for your message! I\'m here to help you with FraudGuard. You can ask me about cases, transactions, investigations, or how to use specific features.';
+    return 'Thank you for your message! I\'m here to help you with Guardian Shield. You can ask me about cases, transactions, investigations, or how to use specific features.';
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
