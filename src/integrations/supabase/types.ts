@@ -990,6 +990,10 @@ export type Database = {
         Args: { p_case_id: number }
         Returns: boolean
       }
+      user_is_assigned_to_case_txn: {
+        Args: { p_txn_id: number }
+        Returns: boolean
+      }
       user_owns_customer: { Args: { p_customer_id: number }; Returns: boolean }
     }
     Enums: {
