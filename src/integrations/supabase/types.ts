@@ -257,6 +257,44 @@ export type Database = {
           },
         ]
       }
+      case_messages: {
+        Row: {
+          case_id: number
+          created_at: string
+          message_body: string
+          message_id: number
+          seen_at: string | null
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          case_id: number
+          created_at?: string
+          message_body: string
+          message_id?: never
+          seen_at?: string | null
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          case_id?: number
+          created_at?: string
+          message_body?: string
+          message_id?: never
+          seen_at?: string | null
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "fraud_cases"
+            referencedColumns: ["case_id"]
+          },
+        ]
+      }
       case_transactions: {
         Row: {
           case_id: number
@@ -986,6 +1024,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      user_can_access_case_messages: {
+        Args: { p_case_id: number }
+        Returns: boolean
+      }
       user_is_assigned_investigator: {
         Args: { p_case_id: number }
         Returns: boolean
@@ -994,6 +1036,7 @@ export type Database = {
         Args: { p_txn_id: number }
         Returns: boolean
       }
+      user_is_case_owner: { Args: { p_case_id: number }; Returns: boolean }
       user_owns_customer: { Args: { p_customer_id: number }; Returns: boolean }
     }
     Enums: {
