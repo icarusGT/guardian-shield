@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFeedbackForm';
 import CaseDecisionForm, { CaseDecisionList } from '@/components/decisions/CaseDecisionForm';
 import CaseChat from '@/components/chat/CaseChat';
+import CaseRatingModal from '@/components/ratings/CaseRatingModal';
 import {
   ArrowLeft,
   FileText,
@@ -132,6 +133,10 @@ export default function CaseDetail() {
   const [loadingData, setLoadingData] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadNote, setUploadNote] = useState('');
+  const [showRating, setShowRating] = useState(false);
+  const [ratingCustomerId, setRatingCustomerId] = useState<number | null>(null);
+  const [ratingInvestigatorId, setRatingInvestigatorId] = useState<number | null>(null);
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -157,7 +162,14 @@ export default function CaseDetail() {
       .single();
 
     if (caseResult) {
-      setCaseData(caseResult as unknown as FraudCase);
+      const newCase = caseResult as unknown as FraudCase;
+      // Detect closure transition for rating popup
+      if (previousStatus && previousStatus !== 'CLOSED' && newCase.status === 'CLOSED' && isCustomer) {
+        // Trigger rating after data finishes loading
+        setTimeout(() => checkAndShowRating(newCase), 500);
+      }
+      setPreviousStatus(newCase.status);
+      setCaseData(newCase);
       
       // Fetch reported user info using secure RPC function
       const { data: reporterData } = await supabase
@@ -285,6 +297,52 @@ export default function CaseDetail() {
 
     setLoadingData(false);
   };
+
+  const checkAndShowRating = async (c: FraudCase) => {
+    if (!caseId) return;
+    const id = parseInt(caseId);
+
+    // Check if already rated
+    const { data: existingRating } = await supabase
+      .from('case_ratings')
+      .select('id')
+      .eq('case_id', id)
+      .maybeSingle();
+    if (existingRating) return;
+
+    // Check skip cooldown (24h)
+    const skippedAt = localStorage.getItem(`rating_skipped_${id}`);
+    if (skippedAt) {
+      const skippedTime = new Date(skippedAt).getTime();
+      if (Date.now() - skippedTime < 24 * 60 * 60 * 1000) return;
+    }
+
+    // Get customer_id and investigator_id
+    const { data: custData } = await supabase
+      .from('customers')
+      .select('customer_id')
+      .eq('user_id', user!.id)
+      .single();
+
+    const { data: invData } = await supabase
+      .from('v_case_assigned_investigator')
+      .select('investigator_id')
+      .eq('case_id', id)
+      .maybeSingle();
+
+    if (custData && invData) {
+      setRatingCustomerId(custData.customer_id);
+      setRatingInvestigatorId(invData.investigator_id);
+      setShowRating(true);
+    }
+  };
+
+  // Also check on initial load if case is already closed and needs rating
+  useEffect(() => {
+    if (caseData && caseData.status === 'CLOSED' && isCustomer && !loadingData && caseId) {
+      checkAndShowRating(caseData);
+    }
+  }, [caseData?.status, isCustomer, loadingData]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -775,6 +833,16 @@ export default function CaseDetail() {
           </div>
         </div>
       </div>
+      {/* Rating Modal */}
+      {showRating && ratingCustomerId && ratingInvestigatorId && caseId && (
+        <CaseRatingModal
+          caseId={parseInt(caseId)}
+          investigatorId={ratingInvestigatorId}
+          customerId={ratingCustomerId}
+          open={showRating}
+          onClose={() => setShowRating(false)}
+        />
+      )}
     </AppLayout>
   );
 }
