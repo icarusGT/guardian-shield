@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFeedbackForm';
 import CaseDecisionForm, { CaseDecisionList } from '@/components/decisions/CaseDecisionForm';
+import CaseChat from '@/components/chat/CaseChat';
 import {
   ArrowLeft,
   FileText,
@@ -115,7 +116,7 @@ const statusColors: Record<string, string> = {
 
 export default function CaseDetail() {
   const { caseId } = useParams<{ caseId: string }>();
-  const { user, loading, isAdmin, isInvestigator } = useAuth();
+  const { user, loading, isAdmin, isInvestigator, isCustomer } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -766,6 +767,11 @@ export default function CaseDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* In-Case Messaging */}
+            {(isCustomer || isInvestigator) && caseId && (
+              <CaseChat caseId={parseInt(caseId)} />
+            )}
           </div>
         </div>
       </div>
