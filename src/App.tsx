@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
-import ChatAssistance from "@/components/ChatAssistance";
+
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -64,7 +64,7 @@ const App = () => (
             <Route path="/project-report" element={<ProjectReport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <ChatAssistance />
+          
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
