@@ -20,6 +20,7 @@ import {
   PlusCircle,
   Gavel,
   MessageSquareText,
+  Star,
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -36,6 +37,7 @@ const navigation = [
   { name: 'Feedback', href: '/admin-feedback', icon: MessageSquareText, roles: [1] },
   { name: 'Users', href: '/users', icon: Users, roles: [1] },
   { name: 'Investigations', href: '/investigations', icon: ClipboardList, roles: [1, 2] },
+  { name: 'Performance', href: '/investigator-performance', icon: Star, roles: [1, 2] },
   { name: 'Query Debugger', href: '/query-debugger', icon: Terminal, roles: [1, 3] },
 ];
 
