@@ -589,6 +589,84 @@ export type Database = {
         }
         Relationships: []
       }
+      investigator_ratings: {
+        Row: {
+          case_id: number
+          communication_rating: number
+          created_at: string
+          customer_id: number
+          feedback_comment: string | null
+          flagged_for_review: boolean
+          id: number
+          investigator_id: number
+          overall_rating: number
+          professionalism_rating: number
+          speed_rating: number
+        }
+        Insert: {
+          case_id: number
+          communication_rating: number
+          created_at?: string
+          customer_id: number
+          feedback_comment?: string | null
+          flagged_for_review?: boolean
+          id?: never
+          investigator_id: number
+          overall_rating: number
+          professionalism_rating: number
+          speed_rating: number
+        }
+        Update: {
+          case_id?: number
+          communication_rating?: number
+          created_at?: string
+          customer_id?: number
+          feedback_comment?: string | null
+          flagged_for_review?: boolean
+          id?: never
+          investigator_id?: number
+          overall_rating?: number
+          professionalism_rating?: number
+          speed_rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigator_ratings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "fraud_cases"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "investigator_ratings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "investigator_ratings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers_safe"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "investigator_ratings_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "investigators"
+            referencedColumns: ["investigator_id"]
+          },
+          {
+            foreignKeyName: "investigator_ratings_investigator_id_fkey"
+            columns: ["investigator_id"]
+            isOneToOne: false
+            referencedRelation: "v_case_assigned_investigator"
+            referencedColumns: ["investigator_id"]
+          },
+        ]
+      }
       investigators: {
         Row: {
           badge_no: string | null

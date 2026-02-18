@@ -13,6 +13,7 @@ import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFe
 import CaseDecisionForm, { CaseDecisionList } from '@/components/decisions/CaseDecisionForm';
 import CaseChat from '@/components/chat/CaseChat';
 import CaseRatingModal from '@/components/ratings/CaseRatingModal';
+import InvestigatorRatingModal from '@/components/ratings/InvestigatorRatingModal';
 import {
   ArrowLeft,
   FileText,
@@ -134,8 +135,11 @@ export default function CaseDetail() {
   const [uploading, setUploading] = useState(false);
   const [uploadNote, setUploadNote] = useState('');
   const [showRating, setShowRating] = useState(false);
+  const [showInvestigatorRating, setShowInvestigatorRating] = useState(false);
   const [ratingCustomerId, setRatingCustomerId] = useState<number | null>(null);
   const [ratingInvestigatorId, setRatingInvestigatorId] = useState<number | null>(null);
+  const [ratingInvestigatorName, setRatingInvestigatorName] = useState('');
+  const [ratingBadgeNo, setRatingBadgeNo] = useState<string | null>(null);
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -326,13 +330,15 @@ export default function CaseDetail() {
 
     const { data: invData } = await supabase
       .from('v_case_assigned_investigator')
-      .select('investigator_id')
+      .select('investigator_id, investigator_name, badge_no')
       .eq('case_id', id)
       .maybeSingle();
 
     if (custData && invData) {
       setRatingCustomerId(custData.customer_id);
       setRatingInvestigatorId(invData.investigator_id);
+      setRatingInvestigatorName(invData.investigator_name || 'Investigator');
+      setRatingBadgeNo(invData.badge_no || null);
       setShowRating(true);
     }
   };
@@ -833,14 +839,30 @@ export default function CaseDetail() {
           </div>
         </div>
       </div>
-      {/* Rating Modal */}
+      {/* Case Rating Modal */}
       {showRating && ratingCustomerId && ratingInvestigatorId && caseId && (
         <CaseRatingModal
           caseId={parseInt(caseId)}
           investigatorId={ratingInvestigatorId}
           customerId={ratingCustomerId}
           open={showRating}
-          onClose={() => setShowRating(false)}
+          onClose={() => {
+            setShowRating(false);
+            // After case rating, show investigator rating
+            setTimeout(() => setShowInvestigatorRating(true), 300);
+          }}
+        />
+      )}
+      {/* Investigator Rating Modal */}
+      {showInvestigatorRating && ratingCustomerId && ratingInvestigatorId && caseId && (
+        <InvestigatorRatingModal
+          caseId={parseInt(caseId)}
+          investigatorId={ratingInvestigatorId}
+          customerId={ratingCustomerId}
+          investigatorName={ratingInvestigatorName}
+          badgeNo={ratingBadgeNo}
+          open={showInvestigatorRating}
+          onClose={() => setShowInvestigatorRating(false)}
         />
       )}
     </AppLayout>
