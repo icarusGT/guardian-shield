@@ -26,6 +26,9 @@ interface Transaction {
   txn_channel: string;
   occurred_at: string;
   recipient_account: string | null;
+  risk_score: number;
+  risk_level: string;
+  is_flagged: boolean;
 }
 
 interface SuspiciousTransaction {
@@ -59,6 +62,9 @@ interface TransactionDecision {
 }
 
 const riskColors: Record<string, string> = {
+  normal: 'bg-green-100 text-green-700',
+  suspicious: 'bg-amber-100 text-amber-700',
+  high: 'bg-red-100 text-red-700',
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
   HIGH: 'bg-red-100 text-red-700',
@@ -182,17 +188,20 @@ export default function Transactions() {
     }
   };
 
-  const suspiciousTxnIds = new Set(suspicious.map((s) => s.txn_id));
   const getSuspiciousInfo = (txnId: number) => suspicious.find((s) => s.txn_id === txnId);
   const getTxnFeedback = (txnId: number) => transactionFeedback.filter((f) => f.txn_id === txnId);
   const getTxnDecisions = (txnId: number) => transactionDecisions.filter((d) => d.txn_id === txnId);
+
+  const suspiciousCount = transactions.filter((t) => t.risk_level === 'suspicious').length;
+  const highRiskCount = transactions.filter((t) => t.risk_level === 'high').length;
+  const flaggedCount = suspiciousCount + highRiskCount;
 
   const filteredTransactions = transactions.filter((t) => {
     const matchesSearch =
       t.txn_id.toString().includes(search) ||
       t.txn_location?.toLowerCase().includes(search.toLowerCase());
     const matchesChannel = channelFilter === 'all' || t.txn_channel === channelFilter;
-    const matchesSuspicious = !showOnlySuspicious || suspiciousTxnIds.has(t.txn_id);
+    const matchesSuspicious = !showOnlySuspicious || t.is_flagged;
     return matchesSearch && matchesChannel && matchesSuspicious;
   });
 
@@ -220,7 +229,7 @@ export default function Transactions() {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-red-50">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              {suspicious.length} Flagged
+              {flaggedCount} Flagged
             </Badge>
           </div>
         </div>
@@ -246,7 +255,7 @@ export default function Transactions() {
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{suspicious.length}</div>
+              <div className="text-2xl font-bold text-destructive">{suspiciousCount}</div>
             </CardContent>
           </Card>
           <Card className="glass-card">
@@ -258,7 +267,7 @@ export default function Transactions() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {suspicious.filter((s) => s.risk_level === 'HIGH').length}
+                {highRiskCount}
               </div>
             </CardContent>
           </Card>
@@ -344,7 +353,7 @@ export default function Transactions() {
                         <tr
                           key={t.txn_id}
                           className={`border-b hover:bg-muted/50 transition-colors ${
-                            suspInfo ? 'bg-destructive/5' : ''
+                            t.is_flagged ? 'bg-destructive/5' : ''
                           }`}
                         >
                           <td className="py-3 px-4 font-mono text-sm">#{t.txn_id}</td>
@@ -361,22 +370,18 @@ export default function Transactions() {
                             {new Date(t.occurred_at).toLocaleString()}
                           </td>
                           <td className="py-3 px-4">
-                            {suspInfo ? (
-                              <div className="flex flex-col gap-1">
-                                <Badge className={riskColors[suspInfo.risk_level]}>
-                                  {suspInfo.risk_level} ({suspInfo.risk_score})
-                                </Badge>
-                                {suspInfo.reasons && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {suspInfo.reasons}
-                                  </span>
-                                )}
-                                <TransactionFeedbackList txnId={t.txn_id} feedback={txnFeedback} />
-                                <TransactionDecisionList decisions={txnDecisions} showInternalNotes={isAdmin} />
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
+                            <div className="flex flex-col gap-1">
+                              <Badge className={riskColors[t.risk_level] || 'bg-green-100 text-green-700'}>
+                                {t.risk_level.toUpperCase()} ({t.risk_score})
+                              </Badge>
+                              {suspInfo?.reasons && (
+                                <span className="text-xs text-muted-foreground">
+                                  {suspInfo.reasons}
+                                </span>
+                              )}
+                              <TransactionFeedbackList txnId={t.txn_id} feedback={txnFeedback} />
+                              <TransactionDecisionList decisions={txnDecisions} showInternalNotes={isAdmin} />
+                            </div>
                           </td>
                           {(isInvestigator || isAdmin) && (
                             <td className="py-3 px-4">
