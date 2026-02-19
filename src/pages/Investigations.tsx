@@ -92,6 +92,8 @@ export default function Investigations() {
   const [newStatus, setNewStatus] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [hasFinalizedDecision, setHasFinalizedDecision] = useState(false);
+  const [checkingDecision, setCheckingDecision] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -234,6 +236,18 @@ export default function Investigations() {
     } finally {
       setAssigning(false);
     }
+  };
+
+  const checkFinalizedDecision = async (caseId: number) => {
+    setCheckingDecision(true);
+    const { data } = await supabase
+      .from('case_decisions')
+      .select('decision_id')
+      .eq('case_id', caseId)
+      .in('status', ['FINAL', 'COMMUNICATED'])
+      .limit(1);
+    setHasFinalizedDecision(!!(data && data.length > 0));
+    setCheckingDecision(false);
   };
 
   const handleStatusUpdate = async () => {
@@ -445,6 +459,8 @@ export default function Investigations() {
                                   onClick={() => {
                                     setStatusCase(c);
                                     setNewStatus(c.status);
+                                    setHasFinalizedDecision(false);
+                                    checkFinalizedDecision(c.case_id);
                                   }}
                                 >
                                   <RefreshCw className="h-4 w-4" />
@@ -527,9 +543,18 @@ export default function Investigations() {
                   <SelectContent>
                     <SelectItem value="OPEN">Open</SelectItem>
                     <SelectItem value="UNDER_INVESTIGATION">Under Investigation</SelectItem>
-                    <SelectItem value="CLOSED">Closed</SelectItem>
+                    <SelectItem value="CLOSED" disabled={!hasFinalizedDecision}>Closed</SelectItem>
                   </SelectContent>
                 </Select>
+                {newStatus === 'CLOSED' && !hasFinalizedDecision && !checkingDecision && (
+                  <div className="flex items-center gap-2 text-sm text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    You must finalize a decision before closing this case.
+                  </div>
+                )}
+                {checkingDecision && (
+                  <p className="text-sm text-muted-foreground">Checking decision status...</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Comment (optional)</Label>
@@ -545,7 +570,7 @@ export default function Investigations() {
               <Button variant="outline" onClick={() => setStatusCase(null)}>
                 Cancel
               </Button>
-              <Button onClick={handleStatusUpdate} disabled={!newStatus || updatingStatus}>
+              <Button onClick={handleStatusUpdate} disabled={!newStatus || updatingStatus || (newStatus === 'CLOSED' && !hasFinalizedDecision)}>
                 {updatingStatus ? 'Updating...' : 'Update Status'}
               </Button>
             </DialogFooter>
