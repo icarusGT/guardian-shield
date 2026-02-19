@@ -1157,6 +1157,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      investigator_rating_exists: {
+        Args: { p_case_id: number; p_customer_id: number }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_auditor: { Args: never; Returns: boolean }
       is_customer: { Args: never; Returns: boolean }
