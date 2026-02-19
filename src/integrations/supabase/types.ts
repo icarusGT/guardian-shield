@@ -1143,6 +1143,10 @@ export type Database = {
       app_ip: { Args: never; Returns: string }
       app_user_id: { Args: never; Returns: string }
       case_id_from_path: { Args: { p_path: string }; Returns: number }
+      case_rating_exists: {
+        Args: { p_case_id: number; p_customer_id: number }
+        Returns: boolean
+      }
       current_role_id: { Args: never; Returns: number }
       evaluate_transaction: { Args: { p_txn_id: number }; Returns: undefined }
       get_case_reporter: {
