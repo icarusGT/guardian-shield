@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, FileText, AlertCircle, Loader2, User, DollarSign, CreditCard } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -171,7 +172,7 @@ export default function CreateCase() {
           title: formData.title.trim(),
           description: formData.description.trim() || null,
           category: formData.category,
-          severity: formData.severity,
+          severity: isCustomer ? 'LOW' : formData.severity,
           status: 'OPEN',
         })
         .select()
@@ -443,42 +444,56 @@ export default function CreateCase() {
                   </Select>
                 </div>
 
-                {/* Severity */}
-                <div className="space-y-2">
-                  <Label htmlFor="severity">
-                    Severity <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={formData.severity}
-                    onValueChange={(value: any) =>
-                      setFormData({ ...formData, severity: value })
-                    }
-                  >
-                    <SelectTrigger id="severity">
-                      <SelectValue placeholder="Select severity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LOW">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          Low
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="MEDIUM">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-amber-500" />
-                          Medium
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="HIGH">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500" />
-                          High
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Severity - only editable by admin/investigator */}
+                {!isCustomer ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="severity">
+                      Severity <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={formData.severity}
+                      onValueChange={(value: any) =>
+                        setFormData({ ...formData, severity: value })
+                      }
+                    >
+                      <SelectTrigger id="severity">
+                        <SelectValue placeholder="Select severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LOW">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            Low
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="MEDIUM">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-amber-500" />
+                            Medium
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="HIGH">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                            High
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Severity</Label>
+                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                      <Badge className="bg-muted-foreground/20 text-muted-foreground">
+                        Auto-assigned
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Severity is computed automatically based on risk analysis
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

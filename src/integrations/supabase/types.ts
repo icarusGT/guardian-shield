@@ -50,6 +50,27 @@ export type Database = {
         }
         Relationships: []
       }
+      blacklisted_recipients: {
+        Row: {
+          created_at: string
+          id: number
+          reason: string | null
+          recipient_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          reason?: string | null
+          recipient_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          reason?: string | null
+          recipient_value?: string
+        }
+        Relationships: []
+      }
       case_assignments: {
         Row: {
           assigned_at: string
@@ -914,8 +935,11 @@ export type Database = {
       transactions: {
         Row: {
           customer_id: number
+          is_flagged: boolean
           occurred_at: string
           recipient_account: string | null
+          risk_level: string
+          risk_score: number
           txn_amount: number
           txn_channel: Database["public"]["Enums"]["txn_channel"]
           txn_id: number
@@ -923,8 +947,11 @@ export type Database = {
         }
         Insert: {
           customer_id: number
+          is_flagged?: boolean
           occurred_at?: string
           recipient_account?: string | null
+          risk_level?: string
+          risk_score?: number
           txn_amount: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
           txn_id?: never
@@ -932,8 +959,11 @@ export type Database = {
         }
         Update: {
           customer_id?: number
+          is_flagged?: boolean
           occurred_at?: string
           recipient_account?: string | null
+          risk_level?: string
+          risk_score?: number
           txn_amount?: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
           txn_id?: never
