@@ -1,6 +1,6 @@
 // Last updated: 20th February 2026
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
@@ -53,12 +53,14 @@ const decisionStatusColors: Record<string, string> = {
 export default function Cases() {
   const { user, loading, isAdmin, isAuditor } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [cases, setCases] = useState<FraudCase[]>([]);
   const [decisionMap, setDecisionMap] = useState<Map<number, string>>(new Map());
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [decisionFilter, setDecisionFilter] = useState<string>(searchParams.get('decision') || 'all');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -114,7 +116,12 @@ export default function Cases() {
       c.case_id.toString().includes(search);
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
     const matchesSeverity = severityFilter === 'all' || c.severity === severityFilter;
-    return matchesSearch && matchesStatus && matchesSeverity;
+    const caseDecision = decisionMap.get(c.case_id);
+    const matchesDecision =
+      decisionFilter === 'all' ||
+      (decisionFilter === 'none' && !caseDecision) ||
+      caseDecision === decisionFilter;
+    return matchesSearch && matchesStatus && matchesSeverity && matchesDecision;
   });
 
   if (loading) {
@@ -173,6 +180,18 @@ export default function Cases() {
                   <SelectItem value="LOW">Low</SelectItem>
                   <SelectItem value="MEDIUM">Medium</SelectItem>
                   <SelectItem value="HIGH">High</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={decisionFilter} onValueChange={setDecisionFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Decision" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Decisions</SelectItem>
+                  <SelectItem value="none">No Decision</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="FINAL">Finalized</SelectItem>
+                  <SelectItem value="COMMUNICATED">Communicated</SelectItem>
                 </SelectContent>
               </Select>
             </div>

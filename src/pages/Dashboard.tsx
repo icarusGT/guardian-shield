@@ -65,6 +65,12 @@ interface DecisionStats {
   communicatedCount: number;
 }
 
+interface InvDecisionStats {
+  newAssignments: FraudCase[];
+  draftCases: FraudCase[];
+  finalizedCases: FraudCase[];
+}
+
 const severityColors: Record<string, string> = {
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
@@ -92,6 +98,11 @@ export default function Dashboard() {
   const [suspicious, setSuspicious] = useState<SuspiciousTransaction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [assignedCasesCount, setAssignedCasesCount] = useState(0);
+  const [invDecisionStats, setInvDecisionStats] = useState<InvDecisionStats>({
+    newAssignments: [],
+    draftCases: [],
+    finalizedCases: [],
+  });
   const [decisionStats, setDecisionStats] = useState<DecisionStats>({
     draftCount: 0,
     finalCount: 0,
@@ -172,7 +183,7 @@ export default function Dashboard() {
       if (invData) {
         const { data: assignData } = await supabase
           .from('case_assignments')
-          .select('case_id')
+          .select('case_id, assigned_at')
           .eq('investigator_id', invData.investigator_id);
 
         if (assignData && assignData.length > 0) {
@@ -181,11 +192,44 @@ export default function Dashboard() {
             .from('fraud_cases')
             .select('case_id, title, category, severity, status, created_at')
             .in('case_id', caseIds)
-            .order('created_at', { ascending: false })
-            .limit(10);
+            .order('created_at', { ascending: false });
+          
           if (casesData) {
             setMyCases(casesData as FraudCase[]);
             setAssignedCasesCount(casesData.length);
+
+            // Fetch decisions for assigned cases
+            const { data: decisionsData } = await supabase
+              .from('case_decisions')
+              .select('case_id, status')
+              .in('case_id', caseIds);
+
+            // Build decision map: case_id → highest priority status
+            const decisionMap = new Map<number, string>();
+            const priority: Record<string, number> = { DRAFT: 1, FINAL: 2, COMMUNICATED: 3 };
+            (decisionsData || []).forEach((d: any) => {
+              const existing = decisionMap.get(d.case_id);
+              if (!existing || (priority[d.status] || 0) > (priority[existing] || 0)) {
+                decisionMap.set(d.case_id, d.status);
+              }
+            });
+
+            // New assignments: OPEN or UNDER_INVESTIGATION without a decision
+            const newAssignments = (casesData as FraudCase[]).filter(
+              (c) => (c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION') && !decisionMap.has(c.case_id)
+            );
+
+            // Draft cases: have a DRAFT decision (highest)
+            const draftCases = (casesData as FraudCase[]).filter(
+              (c) => decisionMap.get(c.case_id) === 'DRAFT'
+            );
+
+            // Finalized cases: have a FINAL decision (not communicated)
+            const finalizedCases = (casesData as FraudCase[]).filter(
+              (c) => decisionMap.get(c.case_id) === 'FINAL'
+            );
+
+            setInvDecisionStats({ newAssignments, draftCases, finalizedCases });
           }
         }
       }
@@ -421,56 +465,158 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Role-Specific Stats */}
+        {/* Investigator Decision Workflow */}
         {isInvestigator && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="glass-card">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Assigned Cases
-                </CardTitle>
-                <UserCheck className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{assignedCasesCount}</div>
-                <Button variant="link" className="p-0 h-auto mt-2" asChild>
-                  <Link to="/investigations">
-                    View all <ArrowRight className="h-3 w-3 ml-1" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+          <>
+            {/* Action Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card
+                className="glass-card cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+                onClick={() => navigate('/cases?decision=none')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    New Assignments
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <UserCheck className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{invDecisionStats.newAssignments.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">No decision yet</p>
+                </CardContent>
+              </Card>
 
-            <Card className="glass-card">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Active Cases
-                </CardTitle>
-                <Activity className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {myCases.filter((c) => c.status !== 'CLOSED').length}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Requiring attention</p>
-              </CardContent>
-            </Card>
+              <Card
+                className="glass-card cursor-pointer hover:shadow-md hover:border-amber-300 transition-all"
+                onClick={() => navigate('/cases?decision=DRAFT')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Draft Decisions
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-amber-500/10">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{invDecisionStats.draftCases.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Awaiting finalization</p>
+                </CardContent>
+              </Card>
 
-            <Card className="glass-card">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Completed
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {myCases.filter((c) => c.status === 'CLOSED').length}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Cases resolved</p>
-              </CardContent>
-            </Card>
-          </div>
+              <Card
+                className="glass-card cursor-pointer hover:shadow-md hover:border-orange-300 transition-all border-orange-200 bg-orange-50/30"
+                onClick={() => navigate('/cases?decision=DRAFT')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-orange-700">
+                    Ready to Finalize
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <Zap className="h-4 w-4 text-orange-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-700">{invDecisionStats.draftCases.length}</div>
+                  <p className="text-xs text-orange-600 mt-1">Action required</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="glass-card cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+                onClick={() => navigate('/cases?decision=FINAL')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Finalized (Pending Admin)
+                  </CardTitle>
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <CheckCircle className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{invDecisionStats.finalizedCases.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Awaiting admin review</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Work Queue: Cases to Finalize */}
+            {invDecisionStats.draftCases.length > 0 && (
+              <Card className="border-amber-200">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Gavel className="h-5 w-5 text-amber-600" />
+                      <CardTitle>Cases to Finalize</CardTitle>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/cases?decision=DRAFT')}>
+                      View all <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {invDecisionStats.draftCases.slice(0, 5).map((c) => (
+                      <div key={c.case_id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm text-muted-foreground">#{c.case_id}</span>
+                          <span className="font-medium text-sm">{c.title}</span>
+                          <Badge className={severityColors[c.severity]} variant="outline">{c.severity}</Badge>
+                          <Badge className={statusColors[c.status]} variant="outline">{c.status.replace('_', ' ')}</Badge>
+                          <Badge className="bg-amber-100 text-amber-700" variant="outline">Draft</Badge>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/cases/${c.case_id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Work Queue: New Assignments */}
+            {invDecisionStats.newAssignments.length > 0 && (
+              <Card className="border-blue-200">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-blue-600" />
+                      <CardTitle>New Assignments</CardTitle>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/cases?decision=none')}>
+                      View all <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {invDecisionStats.newAssignments.slice(0, 5).map((c) => (
+                      <div key={c.case_id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm text-muted-foreground">#{c.case_id}</span>
+                          <span className="font-medium text-sm">{c.title}</span>
+                          <Badge className={severityColors[c.severity]} variant="outline">{c.severity}</Badge>
+                          <Badge className={statusColors[c.status]} variant="outline">{c.status.replace('_', ' ')}</Badge>
+                          <Badge variant="outline" className="text-muted-foreground italic">No Decision</Badge>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/cases/${c.case_id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         {isCustomer && (
