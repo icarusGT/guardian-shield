@@ -135,13 +135,42 @@ export default function Dashboard() {
   const fetchData = async () => {
     setLoadingData(true);
 
-    // Fetch KPI (only for admin/auditor)
+    // Fetch KPI (only for admin/auditor) — compute closure rate & avg close time from fraud_cases
     if (isAdmin || isAuditor) {
-      const { data: kpiData } = await supabase
-        .from('kpi_case_success')
-        .select('*')
-        .single();
-      if (kpiData) setKpi(kpiData as unknown as KPI);
+      const { data: allCases } = await supabase
+        .from('fraud_cases')
+        .select('case_id, status, created_at, closed_at');
+
+      if (allCases) {
+        const total = allCases.length;
+        const open = allCases.filter(c => c.status === 'OPEN').length;
+        const underInv = allCases.filter(c => c.status === 'UNDER_INVESTIGATION').length;
+        const closedCases = allCases.filter(c => c.status === 'CLOSED' && c.closed_at);
+        const closedCount = closedCases.length;
+
+        // Closure Rate: (closed / total) * 100, capped at 100, 0 if no cases
+        const closureRate = total === 0 ? 0 : Math.min((closedCount / total) * 100, 100);
+
+        // Avg Close Time: average hours between created_at and closed_at for closed cases
+        let avgHours = 0;
+        if (closedCases.length > 0) {
+          const totalHours = closedCases.reduce((sum, c) => {
+            const created = new Date(c.created_at).getTime();
+            const closed = new Date(c.closed_at!).getTime();
+            return sum + (closed - created) / (1000 * 60 * 60);
+          }, 0);
+          avgHours = totalHours / closedCases.length;
+        }
+
+        setKpi({
+          total_cases: total,
+          open_cases: open,
+          under_investigation_cases: underInv,
+          closed_cases: closedCount,
+          closure_rate: closureRate,
+          avg_close_hours: avgHours,
+        });
+      }
     }
 
     // Fetch suspicious/high risk transactions directly from transactions table
@@ -384,7 +413,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {((kpi.closure_rate || 0) * 100).toFixed(1)}%
+                  {(kpi.closure_rate || 0).toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {kpi.closed_cases} cases closed
