@@ -95,6 +95,13 @@ interface AssignedInvestigator {
   assigned_at: string | null;
 }
 
+interface RiskReasons {
+  high_amount: number;
+  rapid_reports: number;
+  blacklisted_recipient: number;
+  location_mismatch: number;
+}
+
 interface LinkedTransaction {
   txn_id: number;
   txn_amount: number;
@@ -105,6 +112,7 @@ interface LinkedTransaction {
   risk_score?: number;
   risk_level?: string;
   reasons?: string;
+  risk_reasons?: RiskReasons | null;
 }
 
 interface ReportedUser {
@@ -283,6 +291,7 @@ export default function CaseDetail() {
       if (txnData) {
         const txnsWithRisk: LinkedTransaction[] = txnData.map((txn) => {
           const suspInfo = suspData?.find((s) => s.txn_id === txn.txn_id);
+          const rawReasons = (txn as any).risk_reasons;
           return {
             txn_id: txn.txn_id,
             txn_amount: txn.txn_amount,
@@ -293,6 +302,7 @@ export default function CaseDetail() {
             risk_score: txn.risk_score,
             risk_level: txn.risk_level,
             reasons: suspInfo?.reasons || null,
+            risk_reasons: rawReasons ?? null,
           };
         });
         setLinkedTransactions(txnsWithRisk);
@@ -767,10 +777,8 @@ export default function CaseDetail() {
               const txn = linkedTransactions[0];
               return (
                 <RiskBreakdownCard
-                  riskScore={txn.risk_score ?? 0}
+                  riskReasons={txn.risk_reasons ?? null}
                   riskLevel={txn.risk_level ?? 'low'}
-                  txnAmount={txn.txn_amount}
-                  reasons={txn.reasons}
                 />
               );
             })()}

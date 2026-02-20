@@ -967,6 +967,7 @@ export type Database = {
           occurred_at: string
           recipient_account: string | null
           risk_level: string
+          risk_reasons: Json
           risk_score: number
           txn_amount: number
           txn_channel: Database["public"]["Enums"]["txn_channel"]
@@ -979,6 +980,7 @@ export type Database = {
           occurred_at?: string
           recipient_account?: string | null
           risk_level?: string
+          risk_reasons?: Json
           risk_score?: number
           txn_amount: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
@@ -991,6 +993,7 @@ export type Database = {
           occurred_at?: string
           recipient_account?: string | null
           risk_level?: string
+          risk_reasons?: Json
           risk_score?: number
           txn_amount?: number
           txn_channel?: Database["public"]["Enums"]["txn_channel"]
