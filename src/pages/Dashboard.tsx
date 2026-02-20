@@ -115,16 +115,21 @@ export default function Dashboard() {
   useCaseStatusRealtime(() => fetchData());
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (user) {
+    if (user && profile) {
       fetchData();
     }
-  }, [user, isInvestigator]);
+    // Reset data when user changes (prevents stale cross-account data)
+    return () => {
+      setKpi(null);
+      setCases([]);
+      setMyCases([]);
+      setSuspicious([]);
+      setDecisionStats({ draftCount: 0, finalCount: 0, communicatedCount: 0 });
+      setCustomerDecisionCount(0);
+      setAssignedCasesCount(0);
+      setInvDecisionStats({ newAssignments: [], draftCases: [], finalizedCases: [] });
+    };
+  }, [user?.id, profile?.role_id]);
 
   const fetchData = async () => {
     setLoadingData(true);

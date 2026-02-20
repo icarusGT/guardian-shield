@@ -1,10 +1,10 @@
-// Last updated: 25th January 2026
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
@@ -35,6 +35,10 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const P = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>{children}</ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -45,32 +49,31 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/cases" element={<Cases />} />
-            <Route path="/cases/new" element={<CreateCase />} />
-            <Route path="/cases/:caseId" element={<CaseDetail />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/transactions/new" element={<CreateTransaction />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/investigations" element={<Investigations />} />
+            <Route path="/dashboard" element={<P><Dashboard /></P>} />
+            <Route path="/cases" element={<P><Cases /></P>} />
+            <Route path="/cases/new" element={<P><CreateCase /></P>} />
+            <Route path="/cases/:caseId" element={<P><CaseDetail /></P>} />
+            <Route path="/transactions" element={<P><Transactions /></P>} />
+            <Route path="/transactions/new" element={<P><CreateTransaction /></P>} />
+            <Route path="/users" element={<P><Users /></P>} />
+            <Route path="/investigations" element={<P><Investigations /></P>} />
             <Route path="/team" element={<Team />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
-            <Route path="/query-debugger" element={<QueryDebugger />} />
-            <Route path="/database-schema" element={<DatabaseSchema />} />
-            <Route path="/admin-decisions" element={<AdminDecisions />} />
-            <Route path="/my-decisions" element={<MyDecisions />} />
-            <Route path="/admin-feedback" element={<AdminFeedback />} />
+            <Route path="/query-debugger" element={<P><QueryDebugger /></P>} />
+            <Route path="/database-schema" element={<P><DatabaseSchema /></P>} />
+            <Route path="/admin-decisions" element={<P><AdminDecisions /></P>} />
+            <Route path="/my-decisions" element={<P><MyDecisions /></P>} />
+            <Route path="/admin-feedback" element={<P><AdminFeedback /></P>} />
             <Route path="/project-report" element={<ProjectReport />} />
-            <Route path="/investigator-performance" element={<InvestigatorPerformance />} />
-            <Route path="/blacklist" element={<Blacklist />} />
-            <Route path="/my-profile" element={<MyProfile />} />
+            <Route path="/investigator-performance" element={<P><InvestigatorPerformance /></P>} />
+            <Route path="/blacklist" element={<P><Blacklist /></P>} />
+            <Route path="/my-profile" element={<P><MyProfile /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

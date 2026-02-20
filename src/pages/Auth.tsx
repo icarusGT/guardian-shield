@@ -1,5 +1,5 @@
 // Last updated: 20th January 2025
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -14,21 +14,32 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  if (user) {
-    navigate('/dashboard');
-    return null;
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Checking session…</p>
+      </div>
+    );
   }
+
+  if (user) return null;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
+    setSubmitting(false);
     
     if (error) {
       toast({
@@ -43,9 +54,9 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await signUp(email, password, fullName);
-    setLoading(false);
+    setSubmitting(false);
     
     if (error) {
       toast({
@@ -111,8 +122,8 @@ export default function Auth() {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full gradient-primary" disabled={loading}>
-                    {loading ? 'Signing in...' : 'Sign In'}
+                  <Button type="submit" className="w-full gradient-primary" disabled={submitting}>
+                    {submitting ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </form>
               </TabsContent>
@@ -153,8 +164,8 @@ export default function Auth() {
                       minLength={6}
                     />
                   </div>
-                  <Button type="submit" className="w-full gradient-primary" disabled={loading}>
-                    {loading ? 'Creating account...' : 'Create Account'}
+                  <Button type="submit" className="w-full gradient-primary" disabled={submitting}>
+                    {submitting ? 'Creating account...' : 'Create Account'}
                   </Button>
                 </form>
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg flex gap-2 text-sm text-blue-700">

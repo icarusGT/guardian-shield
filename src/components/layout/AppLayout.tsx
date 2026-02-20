@@ -51,8 +51,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    // Clear React Query cache to prevent stale data on next login
     await signOut();
-    navigate('/auth');
+    navigate('/auth', { replace: true });
   };
 
   const getRoleName = (roleId: number) => {

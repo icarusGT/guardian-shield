@@ -1,5 +1,4 @@
-// Last updated: 20th January 2025
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,36 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    // SECURITY: Use users_safe view to exclude password_hash column
+  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const { data, error } = await supabase
       .from('users_safe')
       .select('user_id, email, full_name, role_id, is_active, is_locked')
@@ -71,9 +41,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (!error && data) {
-      setProfile(data as UserProfile);
+      const p = data as UserProfile;
+      setProfile(p);
+      return p;
     }
-  };
+    setProfile(null);
+    return null;
+  }, []);
+
+  const clearState = useCallback(() => {
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Listen for ONGOING auth changes (does NOT control loading)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        if (!isMounted) return;
+
+        if (event === 'SIGNED_OUT') {
+          clearState();
+          return;
+        }
+
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        if (newSession?.user) {
+          // Use setTimeout to avoid Supabase deadlock
+          setTimeout(() => {
+            if (isMounted) fetchProfile(newSession.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    // 2. INITIAL load — wait for profile before setting loading=false
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          await fetchProfile(initialSession.user.id);
+        }
+      } catch (err) {
+        console.error('Auth init error:', err);
+        if (isMounted) clearState();
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile, clearState]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -93,6 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear profile immediately to prevent stale data rendering
+    clearState();
     await supabase.auth.signOut();
   };
 
