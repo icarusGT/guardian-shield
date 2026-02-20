@@ -1,6 +1,6 @@
-// Last updated: 25th January 2026
+// Last updated: 20th February 2026
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
@@ -35,6 +35,7 @@ import {
   AlertCircle,
   RefreshCw,
   Eye,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface CaseDecision {
@@ -46,6 +47,7 @@ interface CaseDecision {
   internal_notes: string | null;
   created_at: string;
   updated_at: string;
+  communicated_at: string | null;
   case_title?: string;
 }
 
@@ -70,20 +72,26 @@ const categoryColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
+  DRAFT: 'bg-amber-100 text-amber-700',
   FINAL: 'bg-blue-100 text-blue-700',
   COMMUNICATED: 'bg-green-100 text-green-700',
 };
 
+type SortField = 'created_at' | 'updated_at';
+type SortDir = 'asc' | 'desc';
+
 export default function AdminDecisions() {
   const { user, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
   const [txnDecisions, setTxnDecisions] = useState<TransactionDecision[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -94,6 +102,25 @@ export default function AdminDecisions() {
     }
   }, [user, loading, isAdmin, navigate]);
 
+  // Sync URL params to filter
+  useEffect(() => {
+    const urlStatus = searchParams.get('status');
+    if (urlStatus && ['DRAFT', 'FINAL', 'COMMUNICATED'].includes(urlStatus)) {
+      setStatusFilter(urlStatus);
+    }
+  }, [searchParams]);
+
+  // Update URL when filter changes
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    if (value === 'all') {
+      searchParams.delete('status');
+    } else {
+      searchParams.set('status', value);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
+
   useEffect(() => {
     if (user && isAdmin) {
       fetchDecisions();
@@ -103,14 +130,12 @@ export default function AdminDecisions() {
   const fetchDecisions = async () => {
     setLoadingData(true);
 
-    // Fetch case decisions with case titles
     const { data: caseDecisionsData } = await supabase
       .from('case_decisions')
       .select('*')
       .order('updated_at', { ascending: false });
 
     if (caseDecisionsData) {
-      // Fetch case titles
       const caseIds = caseDecisionsData.map((d) => d.case_id);
       const { data: casesData } = await supabase
         .from('fraud_cases')
@@ -125,7 +150,6 @@ export default function AdminDecisions() {
       setCaseDecisions(enriched as CaseDecision[]);
     }
 
-    // Fetch transaction decisions
     const { data: txnDecisionsData } = await supabase
       .from('transaction_decisions')
       .select('*')
@@ -138,11 +162,11 @@ export default function AdminDecisions() {
     setLoadingData(false);
   };
 
-  const filterDecisions = <T extends { category: string; status: string }>(
+  const filterAndSort = <T extends { category: string; status: string; created_at: string; updated_at: string }>(
     decisions: T[],
     searchField: (d: T) => string
   ): T[] => {
-    return decisions.filter((d) => {
+    const filtered = decisions.filter((d) => {
       const matchesSearch =
         searchQuery === '' ||
         searchField(d).toLowerCase().includes(searchQuery.toLowerCase());
@@ -150,13 +174,19 @@ export default function AdminDecisions() {
       const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
     });
+
+    return filtered.sort((a, b) => {
+      const aVal = new Date(a[sortField]).getTime();
+      const bVal = new Date(b[sortField]).getTime();
+      return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+    });
   };
 
-  const filteredCaseDecisions = filterDecisions(
+  const filteredCaseDecisions = filterAndSort(
     caseDecisions,
     (d) => d.case_title || `Case #${d.case_id}`
   );
-  const filteredTxnDecisions = filterDecisions(
+  const filteredTxnDecisions = filterAndSort(
     txnDecisions,
     (d) => `Transaction #${d.txn_id}`
   );
@@ -170,6 +200,15 @@ export default function AdminDecisions() {
   const communicatedCount =
     caseDecisions.filter((d) => d.status === 'COMMUNICATED').length +
     txnDecisions.filter((d) => d.status === 'COMMUNICATED').length;
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  };
 
   if (loading) {
     return (
@@ -203,7 +242,10 @@ export default function AdminDecisions() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="glass-card">
+          <Card
+            className={`glass-card cursor-pointer hover:shadow-md transition-all ${statusFilter === 'DRAFT' ? 'ring-2 ring-amber-400' : ''}`}
+            onClick={() => handleStatusFilterChange(statusFilter === 'DRAFT' ? 'all' : 'DRAFT')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Pending (Draft)
@@ -216,7 +258,10 @@ export default function AdminDecisions() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
+          <Card
+            className={`glass-card cursor-pointer hover:shadow-md transition-all ${statusFilter === 'FINAL' ? 'ring-2 ring-blue-400' : ''}`}
+            onClick={() => handleStatusFilterChange(statusFilter === 'FINAL' ? 'all' : 'FINAL')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Finalized
@@ -229,7 +274,10 @@ export default function AdminDecisions() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
+          <Card
+            className={`glass-card cursor-pointer hover:shadow-md transition-all ${statusFilter === 'COMMUNICATED' ? 'ring-2 ring-green-400' : ''}`}
+            onClick={() => handleStatusFilterChange(statusFilter === 'COMMUNICATED' ? 'all' : 'COMMUNICATED')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Communicated
@@ -264,14 +312,14 @@ export default function AdminDecisions() {
                   />
                 </div>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="FINAL">Final</SelectItem>
+                  <SelectItem value="FINAL">Finalized</SelectItem>
                   <SelectItem value="COMMUNICATED">Communicated</SelectItem>
                 </SelectContent>
               </Select>
@@ -287,6 +335,21 @@ export default function AdminDecisions() {
                   <SelectItem value="INVESTIGATION_ONGOING">Investigation Ongoing</SelectItem>
                   <SelectItem value="INSUFFICIENT_EVIDENCE">Insufficient Evidence</SelectItem>
                   <SelectItem value="REFERRED_TO_AUTHORITIES">Referred to Authorities</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={`${sortField}-${sortDir}`} onValueChange={(v) => {
+                const [field, dir] = v.split('-') as [SortField, SortDir];
+                setSortField(field);
+                setSortDir(dir);
+              }}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at-desc">Created (Newest)</SelectItem>
+                  <SelectItem value="created_at-asc">Created (Oldest)</SelectItem>
+                  <SelectItem value="updated_at-desc">Updated (Newest)</SelectItem>
+                  <SelectItem value="updated_at-asc">Updated (Oldest)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -328,7 +391,22 @@ export default function AdminDecisions() {
                         <TableHead>Case</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Updated</TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => toggleSort('created_at')}
+                        >
+                          <span className="flex items-center gap-1">
+                            Created <ArrowUpDown className="h-3 w-3" />
+                          </span>
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => toggleSort('updated_at')}
+                        >
+                          <span className="flex items-center gap-1">
+                            Updated <ArrowUpDown className="h-3 w-3" />
+                          </span>
+                        </TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -348,7 +426,10 @@ export default function AdminDecisions() {
                               {decision.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(decision.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
                             {new Date(decision.updated_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
@@ -390,7 +471,22 @@ export default function AdminDecisions() {
                         <TableHead>Transaction</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Updated</TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => toggleSort('created_at')}
+                        >
+                          <span className="flex items-center gap-1">
+                            Created <ArrowUpDown className="h-3 w-3" />
+                          </span>
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => toggleSort('updated_at')}
+                        >
+                          <span className="flex items-center gap-1">
+                            Updated <ArrowUpDown className="h-3 w-3" />
+                          </span>
+                        </TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -410,7 +506,10 @@ export default function AdminDecisions() {
                               {decision.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(decision.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
                             {new Date(decision.updated_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>

@@ -1,4 +1,4 @@
-// Last updated: 20th January 2025
+// Last updated: 20th February 2026
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -27,6 +27,11 @@ interface FraudCase {
   description: string | null;
 }
 
+interface DecisionInfo {
+  case_id: number;
+  status: string;
+}
+
 const severityColors: Record<string, string> = {
   LOW: 'bg-green-100 text-green-700',
   MEDIUM: 'bg-amber-100 text-amber-700',
@@ -39,10 +44,17 @@ const statusColors: Record<string, string> = {
   CLOSED: 'bg-green-100 text-green-700',
 };
 
+const decisionStatusColors: Record<string, string> = {
+  DRAFT: 'bg-amber-100 text-amber-700',
+  FINAL: 'bg-blue-100 text-blue-700',
+  COMMUNICATED: 'bg-green-100 text-green-700',
+};
+
 export default function Cases() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin, isAuditor } = useAuth();
   const navigate = useNavigate();
   const [cases, setCases] = useState<FraudCase[]>([]);
+  const [decisionMap, setDecisionMap] = useState<Map<number, string>>(new Map());
   const [loadingData, setLoadingData] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -69,6 +81,29 @@ export default function Cases() {
 
     if (!error && data) {
       setCases(data as FraudCase[]);
+
+      // Fetch decision statuses for all cases (admin/auditor only see all)
+      const caseIds = data.map((c) => c.case_id);
+      if (caseIds.length > 0) {
+        const { data: decisions } = await supabase
+          .from('case_decisions')
+          .select('case_id, status')
+          .in('case_id', caseIds);
+
+        if (decisions) {
+          // Use the latest decision status per case (last one wins since ordered by default)
+          const map = new Map<number, string>();
+          for (const d of decisions as DecisionInfo[]) {
+            // If multiple decisions, prioritize: COMMUNICATED > FINAL > DRAFT
+            const existing = map.get(d.case_id);
+            const priority: Record<string, number> = { DRAFT: 1, FINAL: 2, COMMUNICATED: 3 };
+            if (!existing || (priority[d.status] || 0) > (priority[existing] || 0)) {
+              map.set(d.case_id, d.status);
+            }
+          }
+          setDecisionMap(map);
+        }
+      }
     }
     setLoadingData(false);
   };
@@ -167,6 +202,7 @@ export default function Cases() {
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Category</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Severity</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Decision</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Created</th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">Actions</th>
                     </tr>
@@ -193,6 +229,15 @@ export default function Cases() {
                           <Badge className={statusColors[c.status]}>
                             {c.status.replace('_', ' ')}
                           </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          {decisionMap.has(c.case_id) ? (
+                            <Badge className={decisionStatusColors[decisionMap.get(c.case_id)!]}>
+                              {decisionMap.get(c.case_id)}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-muted-foreground text-sm">
                           {new Date(c.created_at).toLocaleDateString()}
