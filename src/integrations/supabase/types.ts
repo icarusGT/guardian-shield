@@ -221,7 +221,9 @@ export type Database = {
           comment: string | null
           created_at: string
           feedback_id: number
+          investigation_note: string | null
           investigator_id: number
+          subcategory: string | null
           updated_at: string
         }
         Insert: {
@@ -231,7 +233,9 @@ export type Database = {
           comment?: string | null
           created_at?: string
           feedback_id?: never
+          investigation_note?: string | null
           investigator_id: number
+          subcategory?: string | null
           updated_at?: string
         }
         Update: {
@@ -241,7 +245,9 @@ export type Database = {
           comment?: string | null
           created_at?: string
           feedback_id?: never
+          investigation_note?: string | null
           investigator_id?: number
+          subcategory?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1302,6 +1308,9 @@ export type Database = {
         | "REQUIRES_MORE_INFO"
         | "ESCALATE_TO_ADMIN"
         | "UNDER_REVIEW"
+        | "EVIDENCE_REVIEW"
+        | "CUSTOMER_CLARIFICATION"
+        | "RECOMMENDATION"
       risk_level: "LOW" | "MEDIUM" | "HIGH"
       severity_level: "LOW" | "MEDIUM" | "HIGH"
       txn_channel: "BKASH" | "NAGAD" | "CARD" | "BANK" | "CASH" | "OTHER"
@@ -1458,6 +1467,9 @@ export const Constants = {
         "REQUIRES_MORE_INFO",
         "ESCALATE_TO_ADMIN",
         "UNDER_REVIEW",
+        "EVIDENCE_REVIEW",
+        "CUSTOMER_CLARIFICATION",
+        "RECOMMENDATION",
       ],
       risk_level: ["LOW", "MEDIUM", "HIGH"],
       severity_level: ["LOW", "MEDIUM", "HIGH"],

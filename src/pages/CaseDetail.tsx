@@ -73,6 +73,8 @@ interface CaseFeedback {
   comment: string | null;
   created_at: string;
   investigator_id: number;
+  subcategory?: string | null;
+  investigation_note?: string | null;
 }
 
 interface CaseDecision {
@@ -853,7 +855,7 @@ export default function CaseDetail() {
                       <MessageSquare className="h-4 w-4" />
                       Investigation Feedback
                     </CardTitle>
-                    {isInvestigator && myInvestigatorId && caseId && caseData.status !== 'OPEN' && (
+                    {isInvestigator && myInvestigatorId && caseId && caseData.status === 'UNDER_INVESTIGATION' && (
                       <CaseFeedbackForm
                         caseId={parseInt(caseId)}
                         investigatorId={myInvestigatorId}
@@ -873,7 +875,11 @@ export default function CaseDetail() {
                       </p>
                     </div>
                   ) : (
-                    <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
+                    <CaseFeedbackList
+                      caseId={parseInt(caseId || '0')}
+                      feedback={caseFeedback}
+                      investigatorNames={investigator ? { [investigator.investigator_id]: investigator.investigator_name || 'Investigator' } : {}}
+                    />
                   )}
                 </CardContent>
               </Card>
