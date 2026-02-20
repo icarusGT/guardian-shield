@@ -126,7 +126,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} variant="outline" size="sm">
+      <Button onClick={() => setIsOpen(true)} size="sm" className="bg-amber-500 hover:bg-amber-600 text-white border-0">
         <MessageSquare className="h-4 w-4 mr-2" />
         Add Feedback
       </Button>
