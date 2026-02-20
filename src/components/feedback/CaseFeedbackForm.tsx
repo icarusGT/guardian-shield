@@ -90,13 +90,21 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
     });
   };
 
+  // Check each category has at least one subcategory selected
+  const hasSubFromEachCategory = useMemo(() => {
+    return categories.every(cat => {
+      const catSubs = (subcategoryMap[cat.value] || []).map(s => s.value);
+      return catSubs.some(s => selectedSubcategories.includes(s));
+    });
+  }, [selectedSubcategories]);
+
   const handleSubmit = async () => {
     if (selectedCategories.length < 3) {
       toast.error('All 3 categories must be selected');
       return;
     }
-    if (selectedSubcategories.length === 0) {
-      toast.error('Please select at least one subcategory');
+    if (!hasSubFromEachCategory) {
+      toast.error('Please select at least one subcategory from each category');
       return;
     }
     if (!investigationNote.trim()) {
@@ -133,7 +141,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
     }
   };
 
-  const isValid = selectedCategories.length === 3 && selectedSubcategories.length > 0 && investigationNote.trim();
+  const isValid = selectedCategories.length === 3 && hasSubFromEachCategory && investigationNote.trim();
 
   return (
     <>
@@ -182,7 +190,15 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
                       <div key={catVal} className="space-y-1.5">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider pt-1">
                           {catInfo?.label}
-                          {catVal === 'RECOMMENDATION' && <span className="ml-1 text-[10px] normal-case text-orange-500">(select only one)</span>}
+                          {catVal === 'RECOMMENDATION' 
+                            ? <span className="ml-1 text-[10px] normal-case text-orange-500">(select only one)</span>
+                            : <span className="ml-1 text-[10px] normal-case text-muted-foreground">(select at least one)</span>
+                          }
+                          {(() => {
+                            const catSubs = (subcategoryMap[catVal] || []).map(s => s.value);
+                            const hasSel = catSubs.some(s => selectedSubcategories.includes(s));
+                            return hasSel ? <span className="ml-1 text-green-500">✓</span> : null;
+                          })()}
                         </p>
                         {subs.map(sub => (
                           <label key={sub.value} className="flex items-center gap-2.5 cursor-pointer pl-2">
