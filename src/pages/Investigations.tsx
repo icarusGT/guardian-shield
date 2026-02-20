@@ -31,7 +31,6 @@ import {
   UserPlus,
   RefreshCw,
   AlertTriangle,
-  CheckCircle,
 } from 'lucide-react';
 
 interface FraudCase {
@@ -87,13 +86,6 @@ export default function Investigations() {
   const [assignNote, setAssignNote] = useState('');
   const [assigning, setAssigning] = useState(false);
 
-  // Status Update Modal
-  const [statusCase, setStatusCase] = useState<FraudCase | null>(null);
-  const [newStatus, setNewStatus] = useState('');
-  const [statusComment, setStatusComment] = useState('');
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [hasFinalizedDecision, setHasFinalizedDecision] = useState(false);
-  const [checkingDecision, setCheckingDecision] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -238,88 +230,6 @@ export default function Investigations() {
     }
   };
 
-  const checkFinalizedDecision = async (caseId: number) => {
-    setCheckingDecision(true);
-    const { data } = await supabase
-      .from('case_decisions')
-      .select('decision_id')
-      .eq('case_id', caseId)
-      .in('status', ['FINAL', 'COMMUNICATED'])
-      .limit(1);
-    setHasFinalizedDecision(!!(data && data.length > 0));
-    setCheckingDecision(false);
-  };
-
-  const handleStatusUpdate = async () => {
-    if (!statusCase || !newStatus) {
-      toast.error('Please select a case and new status');
-      return;
-    }
-
-    const oldStatus = statusCase.status;
-    
-    // Debug logging
-    console.log('Status change requested:', {
-      case_id: statusCase.case_id,
-      old_status: oldStatus,
-      new_status: newStatus,
-    });
-
-    setUpdatingStatus(true);
-
-    try {
-      // Call the secure RPC function to update status and log to case_history
-      const { data, error } = await supabase.rpc('update_case_status', {
-        p_case_id: statusCase.case_id,
-        p_new_status: newStatus as "OPEN" | "UNDER_INVESTIGATION" | "CLOSED",
-        p_comment: statusComment || null,
-      });
-
-      // Debug logging
-      console.log('Supabase update_case_status response:', { data, error });
-
-      if (error) {
-        console.error('Status update RPC error:', error);
-        if (error.message?.includes('permission') || error.code === '42501') {
-          toast.error('Permission denied to update case status.');
-        } else {
-          toast.error(`Status update failed: ${error.message}`);
-        }
-        return;
-      }
-
-      // Check the response from the RPC function
-      if (data && data.length > 0) {
-        const result = data[0];
-        console.log('RPC result:', result);
-
-        if (result.success) {
-          toast.success(result.message || 'Status updated successfully');
-          setStatusCase(null);
-          setNewStatus('');
-          setStatusComment('');
-          // Refetch data to update UI with fresh data from database
-          await fetchData();
-        } else {
-          // Handle specific error messages from the function
-          if (result.message?.includes('Permission denied')) {
-            toast.error('Permission denied to update case status.');
-          } else {
-            toast.error(result.message || 'Failed to update status');
-          }
-        }
-      } else {
-        // No data returned - unexpected
-        console.error('No data returned from update_case_status');
-        toast.error('Unexpected error: No response from server');
-      }
-    } catch (error: any) {
-      console.error('Unexpected error updating status:', error);
-      toast.error(`Failed to update status: ${error.message || 'Unknown error'}`);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -452,20 +362,6 @@ export default function Investigations() {
                                   <UserPlus className="h-4 w-4" />
                                 </Button>
                               )}
-                              {(isAdmin || isInvestigator) && c.status !== 'CLOSED' && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setStatusCase(c);
-                                    setNewStatus(c.status);
-                                    setHasFinalizedDecision(false);
-                                    checkFinalizedDecision(c.case_id);
-                                  }}
-                                >
-                                  <RefreshCw className="h-4 w-4" />
-                                </Button>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -526,56 +422,6 @@ export default function Investigations() {
           </DialogContent>
         </Dialog>
 
-        {/* Update Status Dialog */}
-        <Dialog open={!!statusCase} onOpenChange={() => setStatusCase(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Update Case Status</DialogTitle>
-              <DialogDescription>Change status for case #{statusCase?.case_id}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>New Status</Label>
-                <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OPEN">Open</SelectItem>
-                    <SelectItem value="UNDER_INVESTIGATION">Under Investigation</SelectItem>
-                    <SelectItem value="CLOSED" disabled={!hasFinalizedDecision}>Closed</SelectItem>
-                  </SelectContent>
-                </Select>
-                {newStatus === 'CLOSED' && !hasFinalizedDecision && !checkingDecision && (
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    You must finalize a decision before closing this case.
-                  </div>
-                )}
-                {checkingDecision && (
-                  <p className="text-sm text-muted-foreground">Checking decision status...</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Comment (optional)</Label>
-                <Textarea
-                  value={statusComment}
-                  onChange={(e) => setStatusComment(e.target.value)}
-                  placeholder="Add a comment about this status change..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStatusCase(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleStatusUpdate} disabled={!newStatus || updatingStatus || (newStatus === 'CLOSED' && !hasFinalizedDecision)}>
-                {updatingStatus ? 'Updating...' : 'Update Status'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </AppLayout>
   );
