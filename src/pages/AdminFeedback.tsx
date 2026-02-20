@@ -1,5 +1,5 @@
-// Last updated: 25th January 2026
-import { useState } from "react";
+// Last updated: 20th February 2026
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, MessageSquare, FileText, Users } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Search, MessageSquare, FileText, Users, ClipboardList, StickyNote } from "lucide-react";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -27,7 +28,7 @@ const feedbackCategories: FeedbackCategory[] = [
 
 const approvalStatuses: ApprovalStatus[] = ["PENDING", "APPROVED", "REJECTED", "ESCALATED"];
 
-const getCategoryColor = (category: FeedbackCategory) => {
+const getCategoryColor = (category: string) => {
   switch (category) {
     case "CONFIRMED_FRAUD":
       return "bg-destructive text-destructive-foreground";
@@ -39,6 +40,28 @@ const getCategoryColor = (category: FeedbackCategory) => {
       return "bg-primary text-primary-foreground";
     case "UNDER_REVIEW":
       return "bg-muted text-muted-foreground";
+    case "EVIDENCE_REVIEW":
+      return "bg-blue-600 text-white";
+    case "CUSTOMER_CLARIFICATION":
+      return "bg-amber-600 text-white";
+    case "RECOMMENDATION":
+      return "bg-violet-600 text-white";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+};
+
+const getSubcategoryColor = (sub: string) => {
+  switch (sub) {
+    case "Confirmed Fraud":
+    case "Likely Fraud":
+      return "bg-destructive text-destructive-foreground";
+    case "Insufficient Evidence":
+      return "bg-amber-600 text-white";
+    case "Reject Case":
+      return "bg-secondary text-secondary-foreground";
+    case "Escalate to Admin":
+      return "bg-primary text-primary-foreground";
     default:
       return "bg-muted text-muted-foreground";
   }
@@ -104,14 +127,15 @@ const AdminFeedback = () => {
     enabled: isAdmin,
   });
 
-  const filterFeedback = <T extends { category: FeedbackCategory; approval_status: ApprovalStatus; comment?: string | null }>(
+  const filterFeedback = <T extends { category: FeedbackCategory; approval_status: ApprovalStatus; comment?: string | null; investigation_note?: string | null }>(
     feedback: T[] | undefined
   ) => {
     if (!feedback) return [];
     return feedback.filter((item) => {
       const matchesSearch =
         searchTerm === "" ||
-        item.comment?.toLowerCase().includes(searchTerm.toLowerCase());
+        item.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.investigation_note?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
       const matchesStatus = statusFilter === "all" || item.approval_status === statusFilter;
       return matchesSearch && matchesCategory && matchesStatus;
@@ -120,6 +144,23 @@ const AdminFeedback = () => {
 
   const filteredCaseFeedback = filterFeedback(caseFeedback);
   const filteredTxnFeedback = filterFeedback(transactionFeedback);
+
+  // Group case feedback by case_id
+  const groupedCaseFeedback = useMemo(() => {
+    const groups: Record<number, { caseInfo: any; entries: any[] }> = {};
+    for (const fb of filteredCaseFeedback) {
+      const caseId = fb.fraud_cases?.case_id ?? fb.case_id;
+      if (!groups[caseId]) {
+        groups[caseId] = { caseInfo: fb.fraud_cases, entries: [] };
+      }
+      groups[caseId].entries.push(fb);
+    }
+    // Sort entries within each group chronologically
+    for (const g of Object.values(groups)) {
+      g.entries.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+    return groups;
+  }, [filteredCaseFeedback]);
 
   // Stats
   const totalCaseFeedback = caseFeedback?.length || 0;
@@ -245,7 +286,7 @@ const AdminFeedback = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cases" className="space-y-4">
+          <TabsContent value="cases" className="space-y-6">
             {loadingCaseFeedback ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -259,45 +300,112 @@ const AdminFeedback = () => {
                 </CardContent>
               </Card>
             ) : (
-              filteredCaseFeedback.map((feedback: any) => (
-                <Card key={feedback.feedback_id}>
+              Object.entries(groupedCaseFeedback).map(([caseId, group]) => (
+                <Card key={caseId}>
                   <CardHeader className="pb-3">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-lg">
-                          Case #{feedback.fraud_cases?.case_id}: {feedback.fraud_cases?.title}
+                          Case #{group.caseInfo?.case_id}: {group.caseInfo?.title}
                         </CardTitle>
-                        <Badge variant="outline">{feedback.fraud_cases?.status}</Badge>
+                        <Badge variant="outline">{group.caseInfo?.status}</Badge>
+                        <Badge variant="outline">{group.caseInfo?.severity}</Badge>
                       </div>
-                      <div className="flex gap-2">
-                        <Badge className={getCategoryColor(feedback.category)}>
-                          {formatCategory(feedback.category)}
-                        </Badge>
-                        <Badge className={getStatusColor(feedback.approval_status)}>
-                          {feedback.approval_status}
-                        </Badge>
-                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {group.entries.length} feedback {group.entries.length === 1 ? "entry" : "entries"}
+                      </span>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          Investigator: {feedback.investigators?.users?.full_name || "Unknown"} (
-                          {feedback.investigators?.badge_no || "N/A"})
-                        </span>
-                        {feedback.investigators?.department && (
-                          <span className="text-xs">• {feedback.investigators.department}</span>
-                        )}
-                      </div>
-                      {feedback.comment && (
-                        <p className="text-sm bg-muted p-3 rounded-md">{feedback.comment}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Submitted: {format(new Date(feedback.created_at), "PPpp")}
-                      </p>
-                    </div>
+                  <CardContent className="space-y-4">
+                    {group.entries.map((feedback: any, idx: number) => {
+                      const selectedCats = feedback.selected_categories
+                        ? feedback.selected_categories.split("||").map((s: string) => s.trim()).filter(Boolean)
+                        : [];
+                      const subcategory = feedback.subcategory;
+
+                      return (
+                        <div key={feedback.feedback_id}>
+                          {idx > 0 && <Separator className="mb-4" />}
+                          <div className="space-y-3">
+                            {/* Investigator & timestamp */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {feedback.investigators?.users?.full_name || "Unknown"}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  ({feedback.investigators?.badge_no || "N/A"})
+                                </span>
+                                {feedback.investigators?.department && (
+                                  <span className="text-xs text-muted-foreground">• {feedback.investigators.department}</span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(feedback.created_at), "PPpp")}
+                              </span>
+                            </div>
+
+                            {/* Status badges row */}
+                            <div className="flex flex-wrap gap-2">
+                              <Badge className={getStatusColor(feedback.approval_status)}>
+                                {feedback.approval_status}
+                              </Badge>
+                            </div>
+
+                            {/* Selected Categories */}
+                            {selectedCats.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                  <ClipboardList className="h-3 w-3" /> Selected Categories
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedCats.map((cat: string) => (
+                                    <Badge key={cat} className={getCategoryColor(cat.toUpperCase().replace(/ /g, "_"))}>
+                                      {formatCategory(cat)}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Subcategory (Recommendation) */}
+                            {subcategory && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-muted-foreground">Recommendation</p>
+                                <Badge className={getSubcategoryColor(subcategory)}>
+                                  {subcategory}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Investigation Note */}
+                            {feedback.investigation_note && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                  <StickyNote className="h-3 w-3" /> Investigation Note
+                                </p>
+                                <div className="text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">
+                                  {feedback.investigation_note}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Additional Comments */}
+                            {feedback.comment && (
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                  <MessageSquare className="h-3 w-3" /> Additional Comments
+                                </p>
+                                <div className="text-sm bg-muted/60 p-3 rounded-md whitespace-pre-wrap">
+                                  {feedback.comment}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </CardContent>
                 </Card>
               ))
