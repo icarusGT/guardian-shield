@@ -670,7 +670,7 @@ export default function Dashboard() {
             <Card className="glass-card border-primary/20 bg-primary/5">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Decisions
+                  Case Outcomes
                 </CardTitle>
                 <Gavel className="h-4 w-4 text-primary" />
               </CardHeader>
