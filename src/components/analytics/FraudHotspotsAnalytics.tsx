@@ -69,32 +69,11 @@ export default function FraudHotspotsAnalytics() {
     setLoading(true);
 
     try {
-      // Fetch all suspicious transactions with their transaction details
-      const { data: suspData, error: suspError } = await supabase
-        .from('suspicious_transactions')
-        .select('txn_id, risk_score, risk_level');
-
-      if (suspError) {
-        console.error('Error fetching suspicious transactions:', suspError);
-        setLoading(false);
-        return;
-      }
-
-      if (!suspData || suspData.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      setTotalSuspicious(suspData.length);
-
-      // Get transaction IDs
-      const txnIds = suspData.map((s) => s.txn_id);
-
-      // Fetch corresponding transactions
+      // Query transactions directly — risk data lives here (risk_level: 'suspicious' | 'high' | 'low')
       const { data: txnData, error: txnError } = await supabase
         .from('transactions')
-        .select('txn_id, txn_channel, txn_amount, txn_location, recipient_account')
-        .in('txn_id', txnIds);
+        .select('txn_id, txn_channel, txn_amount, txn_location, recipient_account, risk_score, risk_level')
+        .in('risk_level', ['suspicious', 'high']);
 
       if (txnError) {
         console.error('Error fetching transactions:', txnError);
@@ -102,24 +81,25 @@ export default function FraudHotspotsAnalytics() {
         return;
       }
 
-      // Create a map for quick lookup
-      const txnMap = new Map(txnData?.map((t) => [t.txn_id, t]) || []);
+      if (!txnData || txnData.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      setTotalSuspicious(txnData.length);
 
       // A) Channel-wise statistics
       const channelMap = new Map<string, { count: number; totalScore: number; totalAmount: number; highRiskCount: number }>();
 
-      suspData.forEach((susp) => {
-        const txn = txnMap.get(susp.txn_id);
-        if (!txn) return;
-
+      txnData.forEach((txn) => {
         const channel = txn.txn_channel || 'OTHER';
         const existing = channelMap.get(channel) || { count: 0, totalScore: 0, totalAmount: 0, highRiskCount: 0 };
 
         channelMap.set(channel, {
           count: existing.count + 1,
-          totalScore: existing.totalScore + (susp.risk_score || 0),
+          totalScore: existing.totalScore + (txn.risk_score || 0),
           totalAmount: existing.totalAmount + (Number(txn.txn_amount) || 0),
-          highRiskCount: existing.highRiskCount + (susp.risk_level === 'HIGH' ? 1 : 0),
+          highRiskCount: existing.highRiskCount + (txn.risk_level === 'high' ? 1 : 0),
         });
       });
 
@@ -135,33 +115,28 @@ export default function FraudHotspotsAnalytics() {
 
       setChannelStats(channelStatsArray);
 
-      // B) Top Recipients (using recipient_account field, fallback to txn_location)
+      // B) Top Recipients
       const recipientMap = new Map<string, { count: number; totalScore: number; totalAmount: number; riskLevels: string[] }>();
 
-      suspData.forEach((susp) => {
-        const txn = txnMap.get(susp.txn_id);
-        if (!txn) return;
-
-        // Prefer recipient_account, fallback to txn_location
-        const recipient = (txn as any).recipient_account || txn.txn_location || 'Unknown';
+      txnData.forEach((txn) => {
+        const recipient = txn.recipient_account || txn.txn_location || 'Unknown';
         const existing = recipientMap.get(recipient) || { count: 0, totalScore: 0, totalAmount: 0, riskLevels: [] };
 
         recipientMap.set(recipient, {
           count: existing.count + 1,
-          totalScore: existing.totalScore + (susp.risk_score || 0),
+          totalScore: existing.totalScore + (txn.risk_score || 0),
           totalAmount: existing.totalAmount + (Number(txn.txn_amount) || 0),
-          riskLevels: [...existing.riskLevels, susp.risk_level],
+          riskLevels: [...existing.riskLevels, txn.risk_level],
         });
       });
 
       const recipientStatsArray: RecipientStats[] = Array.from(recipientMap.entries())
         .map(([recipient, stats]) => {
-          // Determine dominant risk level
-          const highCount = stats.riskLevels.filter((r) => r === 'HIGH').length;
-          const medCount = stats.riskLevels.filter((r) => r === 'MEDIUM').length;
+          const highCount = stats.riskLevels.filter((r) => r === 'high').length;
+          const suspCount = stats.riskLevels.filter((r) => r === 'suspicious').length;
           let dominantRisk = 'LOW';
           if (highCount > 0) dominantRisk = 'HIGH';
-          else if (medCount > 0) dominantRisk = 'MEDIUM';
+          else if (suspCount > 0) dominantRisk = 'MEDIUM';
 
           return {
             recipient,
@@ -172,7 +147,7 @@ export default function FraudHotspotsAnalytics() {
           };
         })
         .sort((a, b) => b.count - a.count)
-        .slice(0, 10); // Top 10 recipients
+        .slice(0, 10);
 
       setRecipientStats(recipientStatsArray);
     } catch (error) {
@@ -223,7 +198,6 @@ export default function FraudHotspotsAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-red-500/10">
           <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -237,7 +211,6 @@ export default function FraudHotspotsAnalytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* A) Channel-wise Suspicious Ranking */}
         <Card className="glass-card">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -297,7 +270,6 @@ export default function FraudHotspotsAnalytics() {
           </CardContent>
         </Card>
 
-        {/* B) Top Recipients */}
         <Card className="glass-card">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -344,7 +316,6 @@ export default function FraudHotspotsAnalytics() {
         </Card>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="glass-card">
           <CardContent className="p-4">

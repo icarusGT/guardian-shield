@@ -138,14 +138,23 @@ export default function Dashboard() {
       if (kpiData) setKpi(kpiData as unknown as KPI);
     }
 
-    // Fetch suspicious transactions (for admin/auditor/investigator)
+    // Fetch suspicious/high risk transactions directly from transactions table
     if (isAdmin || isAuditor || isInvestigator) {
       const { data: suspData } = await supabase
-        .from('suspicious_transactions')
-        .select('*')
-        .order('flagged_at', { ascending: false })
+        .from('transactions')
+        .select('txn_id, risk_score, risk_level, occurred_at')
+        .in('risk_level', ['suspicious', 'high'])
+        .order('occurred_at', { ascending: false })
         .limit(10);
-      if (suspData) setSuspicious(suspData as unknown as SuspiciousTransaction[]);
+      if (suspData) {
+        setSuspicious(suspData.map((t, i) => ({
+          suspicious_id: i,
+          txn_id: t.txn_id,
+          risk_score: t.risk_score,
+          risk_level: t.risk_level.toUpperCase(),
+          flagged_at: t.occurred_at,
+        })));
+      }
     }
 
     // Fetch decision stats for admin
