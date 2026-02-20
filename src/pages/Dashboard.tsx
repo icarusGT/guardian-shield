@@ -380,7 +380,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                <div
+                  className="flex items-center gap-4 p-4 bg-background rounded-lg border cursor-pointer hover:shadow-md hover:border-amber-300 transition-all"
+                  onClick={() => navigate('/admin-decisions?status=DRAFT')}
+                >
                   <div className="p-3 rounded-full bg-amber-100">
                     <Clock className="h-5 w-5 text-amber-600" />
                   </div>
@@ -389,7 +392,10 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">Draft Decisions</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                <div
+                  className="flex items-center gap-4 p-4 bg-background rounded-lg border cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+                  onClick={() => navigate('/admin-decisions?status=FINAL')}
+                >
                   <div className="p-3 rounded-full bg-blue-100">
                     <CheckCircle className="h-5 w-5 text-blue-600" />
                   </div>
@@ -398,7 +404,10 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">Finalized</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-4 bg-background rounded-lg border">
+                <div
+                  className="flex items-center gap-4 p-4 bg-background rounded-lg border cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+                  onClick={() => navigate('/admin-decisions?status=COMMUNICATED')}
+                >
                   <div className="p-3 rounded-full bg-green-100">
                     <MessageSquare className="h-5 w-5 text-green-600" />
                   </div>
