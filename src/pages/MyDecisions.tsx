@@ -7,17 +7,9 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import {
   Gavel,
   FileText,
-  Activity,
   CheckCircle,
   AlertCircle,
   MessageSquare,
@@ -36,18 +28,6 @@ interface CaseDecision {
   updated_at: string;
   case_title?: string;
   case_severity?: string;
-}
-
-interface TransactionDecision {
-  decision_id: number;
-  txn_id: number;
-  category: string;
-  status: string;
-  customer_message: string | null;
-  created_at: string;
-  updated_at: string;
-  txn_amount?: number;
-  txn_channel?: string;
 }
 
 const categoryLabels: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
@@ -96,7 +76,6 @@ export default function MyDecisions() {
   const { user, loading, isCustomer } = useAuth();
   const navigate = useNavigate();
   const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
-  const [txnDecisions, setTxnDecisions] = useState<TransactionDecision[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -156,33 +135,6 @@ export default function MyDecisions() {
       }
     }
 
-    // Get customer's transactions
-    const { data: txnsData } = await supabase
-      .from('transactions')
-      .select('txn_id, txn_amount, txn_channel')
-      .eq('customer_id', customerData.customer_id);
-
-    if (txnsData && txnsData.length > 0) {
-      const txnIds = txnsData.map((t) => t.txn_id);
-      
-      // Fetch transaction decisions (RLS allows COMMUNICATED only for customers)
-      const { data: txnDecisionsData } = await supabase
-        .from('transaction_decisions')
-        .select('*')
-        .in('txn_id', txnIds)
-        .order('updated_at', { ascending: false });
-
-      if (txnDecisionsData) {
-        const txnMap = new Map(txnsData.map((t) => [t.txn_id, t]));
-        const enriched = txnDecisionsData.map((d) => ({
-          ...d,
-          txn_amount: txnMap.get(d.txn_id)?.txn_amount,
-          txn_channel: txnMap.get(d.txn_id)?.txn_channel,
-        }));
-        setTxnDecisions(enriched as TransactionDecision[]);
-      }
-    }
-
     setLoadingData(false);
   };
 
@@ -196,7 +148,7 @@ export default function MyDecisions() {
     );
   }
 
-  const totalDecisions = caseDecisions.length + txnDecisions.length;
+  const totalDecisions = caseDecisions.length;
 
   return (
     <AppLayout>
@@ -227,7 +179,7 @@ export default function MyDecisions() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center p-4 bg-background rounded-lg">
                 <div className="text-3xl font-bold text-primary">{totalDecisions}</div>
                 <p className="text-sm text-muted-foreground">Total Outcomes</p>
@@ -235,10 +187,6 @@ export default function MyDecisions() {
               <div className="text-center p-4 bg-background rounded-lg">
                 <div className="text-3xl font-bold text-blue-600">{caseDecisions.length}</div>
                 <p className="text-sm text-muted-foreground">Case Outcomes</p>
-              </div>
-              <div className="text-center p-4 bg-background rounded-lg">
-                <div className="text-3xl font-bold text-green-600">{txnDecisions.length}</div>
-                <p className="text-sm text-muted-foreground">Transaction Outcomes</p>
               </div>
             </div>
           </CardContent>
@@ -252,7 +200,7 @@ export default function MyDecisions() {
               <Gavel className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No Outcomes Yet</h3>
               <p className="text-muted-foreground mb-4">
-                Official outcomes will appear here once the investigation team has reviewed and communicated their findings on your cases or transactions.
+                Official outcomes will appear here once the investigation team has reviewed and communicated their findings on your cases.
               </p>
               <Button asChild>
                 <Link to="/cases">View My Cases</Link>
@@ -260,163 +208,77 @@ export default function MyDecisions() {
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="cases" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="cases" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Case Outcomes ({caseDecisions.length})
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Transaction Outcomes ({txnDecisions.length})
-              </TabsTrigger>
-            </TabsList>
+          <div className="space-y-4">
+            {caseDecisions.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No case outcomes have been communicated yet.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {caseDecisions.map((decision) => {
+                  const catInfo = categoryLabels[decision.category] || {
+                    label: decision.category,
+                    icon: Info,
+                    color: 'text-gray-600',
+                  };
+                  const Icon = catInfo.icon;
 
-            <TabsContent value="cases">
-              {caseDecisions.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No case outcomes have been communicated yet.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {caseDecisions.map((decision) => {
-                    const catInfo = categoryLabels[decision.category] || {
-                      label: decision.category,
-                      icon: Info,
-                      color: 'text-gray-600',
-                    };
-                    const Icon = catInfo.icon;
-
-                    return (
-                      <Card
-                        key={decision.decision_id}
-                        className={`border-l-4 ${categoryColors[decision.category]}`}
-                      >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="flex items-center gap-2">
-                                <Icon className={`h-5 w-5 ${catInfo.color}`} />
-                                {decision.case_title}
-                              </CardTitle>
-                              <CardDescription className="flex items-center gap-2 mt-1">
-                                <Calendar className="h-4 w-4" />
-                                Decision Date:{' '}
-                                {new Date(decision.updated_at).toLocaleDateString()}
-                              </CardDescription>
-                            </div>
-                            <Badge className={categoryColors[decision.category]}>
-                              {catInfo.label}
-                            </Badge>
+                  return (
+                    <Card
+                      key={decision.decision_id}
+                      className={`border-l-4 ${categoryColors[decision.category]}`}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              <Icon className={`h-5 w-5 ${catInfo.color}`} />
+                              {decision.case_title}
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <Calendar className="h-4 w-4" />
+                              Decision Date:{' '}
+                              {new Date(decision.updated_at).toLocaleDateString()}
+                            </CardDescription>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          {decision.customer_message ? (
-                            <div className="bg-muted/50 rounded-lg p-4">
-                              <h4 className="font-medium mb-2 flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4" />
-                                Official Message
-                              </h4>
-                              <p className="text-sm whitespace-pre-wrap">
-                                {decision.customer_message}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="text-muted-foreground text-sm">
-                              No additional message provided.
+                          <Badge className={categoryColors[decision.category]}>
+                            {catInfo.label}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {decision.customer_message ? (
+                          <div className="bg-muted/50 rounded-lg p-4">
+                            <h4 className="font-medium mb-2 flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              Official Message
+                            </h4>
+                            <p className="text-sm whitespace-pre-wrap">
+                              {decision.customer_message}
                             </p>
-                          )}
-                          <div className="mt-4">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={`/cases/${decision.case_id}`}>
-                                <FileText className="h-4 w-4 mr-2" />
-                                View Case Details
-                              </Link>
-                            </Button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="transactions">
-              {txnDecisions.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No transaction outcomes have been communicated yet.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {txnDecisions.map((decision) => {
-                    const catInfo = categoryLabels[decision.category] || {
-                      label: decision.category,
-                      icon: Info,
-                      color: 'text-gray-600',
-                    };
-                    const Icon = catInfo.icon;
-
-                    return (
-                      <Card
-                        key={decision.decision_id}
-                        className={`border-l-4 ${categoryColors[decision.category]}`}
-                      >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="flex items-center gap-2">
-                                <Icon className={`h-5 w-5 ${catInfo.color}`} />
-                                Transaction #{decision.txn_id}
-                              </CardTitle>
-                              <CardDescription className="mt-1">
-                                {decision.txn_amount && (
-                                  <span className="mr-3">
-                                    Amount: ৳{decision.txn_amount.toLocaleString()}
-                                  </span>
-                                )}
-                                {decision.txn_channel && (
-                                  <Badge variant="outline">{decision.txn_channel}</Badge>
-                                )}
-                              </CardDescription>
-                            </div>
-                            <Badge className={categoryColors[decision.category]}>
-                              {catInfo.label}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            <Calendar className="h-4 w-4 inline mr-1" />
-                            Decision Date: {new Date(decision.updated_at).toLocaleDateString()}
-                          </div>
-                          {decision.customer_message ? (
-                            <div className="bg-muted/50 rounded-lg p-4">
-                              <h4 className="font-medium mb-2 flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4" />
-                                Official Message
-                              </h4>
-                              <p className="text-sm whitespace-pre-wrap">
-                                {decision.customer_message}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="text-muted-foreground text-sm">
-                              No additional message provided.
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                        ) : (
+                          <p className="text-muted-foreground text-sm">
+                            No additional message provided.
+                          </p>
+                        )}
+                        <div className="mt-4">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/cases/${decision.case_id}`}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Case Details
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </AppLayout>
