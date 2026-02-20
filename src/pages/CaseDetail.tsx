@@ -75,7 +75,9 @@ interface CaseDecision {
   customer_message: string | null;
   internal_notes: string | null;
   created_at: string;
+  updated_at: string;
   admin_user_id: string;
+  communicated_at: string | null;
 }
 
 interface AssignedInvestigator {
