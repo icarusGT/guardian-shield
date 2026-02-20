@@ -17,6 +17,7 @@ import CaseRatingModal from '@/components/ratings/CaseRatingModal';
 import InvestigatorRatingModal from '@/components/ratings/InvestigatorRatingModal';
 import BlacklistToggleButton from '@/components/blacklist/BlacklistToggleButton';
 import WhyFlagged from '@/components/risk/WhyFlagged';
+import RiskBreakdownCard from '@/components/risk/RiskBreakdownCard';
 import {
   ArrowLeft,
   FileText,
@@ -751,6 +752,19 @@ export default function CaseDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Risk Breakdown */}
+            {linkedTransactions.length > 0 && (() => {
+              const txn = linkedTransactions[0];
+              return (
+                <RiskBreakdownCard
+                  riskScore={txn.risk_score ?? 0}
+                  riskLevel={txn.risk_level ?? 'low'}
+                  txnAmount={txn.txn_amount}
+                  reasons={txn.reasons}
+                />
+              );
+            })()}
+
             {/* Assigned Investigator */}
             {investigator && (
               <Card className="glass-card">
