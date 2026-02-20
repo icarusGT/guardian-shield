@@ -18,6 +18,8 @@ import InvestigatorRatingModal from '@/components/ratings/InvestigatorRatingModa
 import BlacklistToggleButton from '@/components/blacklist/BlacklistToggleButton';
 import WhyFlagged from '@/components/risk/WhyFlagged';
 import RiskBreakdownCard from '@/components/risk/RiskBreakdownCard';
+import BlacklistRecommendationBanner from '@/components/blacklist/BlacklistRecommendationBanner';
+import { useBlacklistRecommendation } from '@/hooks/useBlacklistRecommendations';
 import {
   ArrowLeft,
   FileText,
@@ -149,6 +151,11 @@ export default function CaseDetail() {
   const [ratingBadgeNo, setRatingBadgeNo] = useState<string | null>(null);
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+
+  // Blacklist recommendation for linked transaction recipient
+  const firstRecipient = linkedTransactions[0]?.recipient_account;
+  const { recommendation: blRec, refresh: refreshBlRec } = useBlacklistRecommendation(firstRecipient);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -485,9 +492,12 @@ export default function CaseDetail() {
             <p className="text-muted-foreground">{caseData.title}</p>
           </div>
         </div>
+        {/* Blacklist Recommendation Banner */}
+        {blRec && !blRec.isAlreadyBlacklisted && (
+          <BlacklistRecommendationBanner recommendation={blRec} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Case Details */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="glass-card">
               <CardHeader>
