@@ -18,14 +18,14 @@ import { XCircle, AlertTriangle, Lock } from 'lucide-react';
 interface AdminCloseCaseButtonProps {
   caseId: number;
   currentStatus: string;
-  hasFinalizedDecision: boolean;
+  hasCommunicatedDecision: boolean;
   onStatusChanged?: () => void;
 }
 
 export default function AdminCloseCaseButton({
   caseId,
   currentStatus,
-  hasFinalizedDecision,
+  hasCommunicatedDecision,
   onStatusChanged,
 }: AdminCloseCaseButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,17 +78,17 @@ export default function AdminCloseCaseButton({
         variant="destructive"
         size="sm"
         className="w-full gap-2"
-        disabled={!hasFinalizedDecision}
+        disabled={!hasCommunicatedDecision}
       >
         <XCircle className="h-4 w-4" />
         Close Case
       </Button>
 
-      {!hasFinalizedDecision && (
+      {!hasCommunicatedDecision && (
         <Alert variant="destructive" className="mt-2">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            A finalized decision is required before closing this case.
+            The decision must be communicated before the case can be closed.
           </AlertDescription>
         </Alert>
       )}

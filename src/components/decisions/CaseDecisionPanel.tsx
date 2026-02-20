@@ -202,14 +202,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
         .eq('decision_id', decision.decision_id);
       if (error) throw error;
 
-      // Insert status history entry
-      await supabase.from('case_history').insert({
-        case_id: caseId,
-        old_status: 'UNDER_INVESTIGATION' as any,
-        new_status: 'UNDER_INVESTIGATION' as any,
-        changed_by_user: user!.id,
-        comment: 'Decision Communicated',
-      });
+      // No manual history insert — status history is only created by actual status changes
 
       toast.success('Decision communicated to customer');
       setConfirmCommunicateDecision(null);
