@@ -30,11 +30,11 @@ interface CaseFeedbackFormProps {
 }
 
 const feedbackCategories = [
-  { value: 'CONFIRMED_FRAUD', label: 'Confirmed Fraud', icon: Shield, color: 'bg-red-100 text-red-700' },
-  { value: 'FALSE_POSITIVE', label: 'False Positive', icon: XCircle, color: 'bg-green-100 text-green-700' },
-  { value: 'REQUIRES_MORE_INFO', label: 'Requires More Info', icon: AlertTriangle, color: 'bg-amber-100 text-amber-700' },
-  { value: 'ESCALATE_TO_ADMIN', label: 'Escalate to Admin', icon: MessageSquare, color: 'bg-purple-100 text-purple-700' },
-  { value: 'UNDER_REVIEW', label: 'Under Review', icon: Clock, color: 'bg-blue-100 text-blue-700' },
+  { value: 'CONFIRMED_FRAUD', label: 'Evidence Review Note', icon: Shield, color: 'bg-slate-100 text-slate-700' },
+  { value: 'FALSE_POSITIVE', label: 'Verification Update', icon: CheckCircle, color: 'bg-green-100 text-green-700' },
+  { value: 'REQUIRES_MORE_INFO', label: 'Need More Information', icon: AlertTriangle, color: 'bg-amber-100 text-amber-700' },
+  { value: 'ESCALATE_TO_ADMIN', label: 'Escalation Request', icon: MessageSquare, color: 'bg-purple-100 text-purple-700' },
+  { value: 'UNDER_REVIEW', label: 'Progress Update', icon: Clock, color: 'bg-blue-100 text-blue-700' },
 ];
 
 const approvalStatuses = [
