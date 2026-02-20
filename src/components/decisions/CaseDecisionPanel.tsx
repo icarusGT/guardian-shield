@@ -177,7 +177,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   const canFinalizeDecision = (d: CaseDecision) =>
     isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id;
 
-  const DecisionFormFields = () => (
+  const decisionFormFields = (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
         <Label>Outcome *</Label>
@@ -340,7 +340,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
               Create a decision for Case #{caseId}. It will start as a draft and must be finalized before the case can be closed.
             </DialogDescription>
           </DialogHeader>
-          <DecisionFormFields />
+          {decisionFormFields}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={!category || !reason.trim() || submitting} className="gap-2">
@@ -362,7 +362,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
               Update the draft decision for Case #{caseId}.
             </DialogDescription>
           </DialogHeader>
-          <DecisionFormFields />
+          {decisionFormFields}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
             <Button onClick={handleUpdate} disabled={!category || !reason.trim() || submitting} className="gap-2">
