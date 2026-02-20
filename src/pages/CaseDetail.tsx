@@ -873,7 +873,7 @@ export default function CaseDetail() {
                       <MessageSquare className="h-4 w-4" />
                       Investigation Feedback
                     </CardTitle>
-                    {isInvestigator && myInvestigatorId && caseId && (
+                    {isInvestigator && myInvestigatorId && caseId && caseData.status !== 'OPEN' && (
                       <CaseFeedbackForm
                         caseId={parseInt(caseId)}
                         investigatorId={myInvestigatorId}
@@ -884,7 +884,17 @@ export default function CaseDetail() {
                   <p className="text-xs text-muted-foreground">Optional internal notes — not the official decision.</p>
                 </CardHeader>
                 <CardContent>
-                  <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
+                  {isInvestigator && caseData.status === 'OPEN' ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                      <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-amber-600" />
+                      <p className="text-sm font-medium text-amber-700">Action Required</p>
+                      <p className="text-xs text-amber-600 mt-1">
+                        You must move the case to <strong>Under Investigation</strong> before submitting feedback.
+                      </p>
+                    </div>
+                  ) : (
+                    <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -895,6 +905,7 @@ export default function CaseDetail() {
                 caseId={parseInt(caseId)}
                 decisions={caseDecisions}
                 onDecisionChanged={fetchCaseData}
+                caseStatus={caseData.status}
               />
             )}
 
