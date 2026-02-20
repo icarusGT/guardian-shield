@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -29,7 +28,6 @@ import {
   Search,
   Filter,
   FileText,
-  Activity,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -49,17 +47,6 @@ interface CaseDecision {
   updated_at: string;
   communicated_at: string | null;
   case_title?: string;
-}
-
-interface TransactionDecision {
-  decision_id: number;
-  txn_id: number;
-  category: string;
-  status: string;
-  customer_message: string | null;
-  internal_notes: string | null;
-  created_at: string;
-  updated_at: string;
 }
 
 const categoryColors: Record<string, string> = {
@@ -85,7 +72,6 @@ export default function AdminDecisions() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [caseDecisions, setCaseDecisions] = useState<CaseDecision[]>([]);
-  const [txnDecisions, setTxnDecisions] = useState<TransactionDecision[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
@@ -102,7 +88,6 @@ export default function AdminDecisions() {
     }
   }, [user, loading, isAdmin, navigate]);
 
-  // Sync URL params to filter
   useEffect(() => {
     const urlStatus = searchParams.get('status');
     if (urlStatus && ['DRAFT', 'FINAL', 'COMMUNICATED'].includes(urlStatus)) {
@@ -110,7 +95,6 @@ export default function AdminDecisions() {
     }
   }, [searchParams]);
 
-  // Update URL when filter changes
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value);
     if (value === 'all') {
@@ -150,56 +134,27 @@ export default function AdminDecisions() {
       setCaseDecisions(enriched as CaseDecision[]);
     }
 
-    const { data: txnDecisionsData } = await supabase
-      .from('transaction_decisions')
-      .select('*')
-      .order('updated_at', { ascending: false });
-
-    if (txnDecisionsData) {
-      setTxnDecisions(txnDecisionsData as TransactionDecision[]);
-    }
-
     setLoadingData(false);
   };
 
-  const filterAndSort = <T extends { category: string; status: string; created_at: string; updated_at: string }>(
-    decisions: T[],
-    searchField: (d: T) => string
-  ): T[] => {
-    const filtered = decisions.filter((d) => {
+  const filteredCaseDecisions = caseDecisions
+    .filter((d) => {
       const matchesSearch =
         searchQuery === '' ||
-        searchField(d).toLowerCase().includes(searchQuery.toLowerCase());
+        (d.case_title || `Case #${d.case_id}`).toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
       const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
-    });
-
-    return filtered.sort((a, b) => {
+    })
+    .sort((a, b) => {
       const aVal = new Date(a[sortField]).getTime();
       const bVal = new Date(b[sortField]).getTime();
       return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
     });
-  };
 
-  const filteredCaseDecisions = filterAndSort(
-    caseDecisions,
-    (d) => d.case_title || `Case #${d.case_id}`
-  );
-  const filteredTxnDecisions = filterAndSort(
-    txnDecisions,
-    (d) => `Transaction #${d.txn_id}`
-  );
-
-  const pendingCount =
-    caseDecisions.filter((d) => d.status === 'DRAFT').length +
-    txnDecisions.filter((d) => d.status === 'DRAFT').length;
-  const finalCount =
-    caseDecisions.filter((d) => d.status === 'FINAL').length +
-    txnDecisions.filter((d) => d.status === 'FINAL').length;
-  const communicatedCount =
-    caseDecisions.filter((d) => d.status === 'COMMUNICATED').length +
-    txnDecisions.filter((d) => d.status === 'COMMUNICATED').length;
+  const pendingCount = caseDecisions.filter((d) => d.status === 'DRAFT').length;
+  const finalCount = caseDecisions.filter((d) => d.status === 'FINAL').length;
+  const communicatedCount = caseDecisions.filter((d) => d.status === 'COMMUNICATED').length;
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -231,7 +186,7 @@ export default function AdminDecisions() {
               Admin Decisions
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage all decisions across cases and transactions
+              Manage all decisions across cases
             </p>
           </div>
           <Button onClick={fetchDecisions} variant="outline">
@@ -305,7 +260,7 @@ export default function AdminDecisions() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by case or transaction ID..."
+                    placeholder="Search by case..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -356,179 +311,87 @@ export default function AdminDecisions() {
           </CardContent>
         </Card>
 
-        {/* Tabs for Cases vs Transactions */}
-        <Tabs defaultValue="cases" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="cases" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+        {/* Case Decisions Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
               Case Decisions ({filteredCaseDecisions.length})
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Transaction Decisions ({filteredTxnDecisions.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="cases">
-            <Card>
-              <CardHeader>
-                <CardTitle>Case Decisions</CardTitle>
-                <CardDescription>
-                  All decisions made on fraud cases
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingData ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading...</div>
-                ) : filteredCaseDecisions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No case decisions found
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Case</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead
-                          className="cursor-pointer select-none"
-                          onClick={() => toggleSort('created_at')}
-                        >
-                          <span className="flex items-center gap-1">
-                            Created <ArrowUpDown className="h-3 w-3" />
-                          </span>
-                        </TableHead>
-                        <TableHead
-                          className="cursor-pointer select-none"
-                          onClick={() => toggleSort('updated_at')}
-                        >
-                          <span className="flex items-center gap-1">
-                            Updated <ArrowUpDown className="h-3 w-3" />
-                          </span>
-                        </TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCaseDecisions.map((decision) => (
-                        <TableRow key={decision.decision_id}>
-                          <TableCell className="font-medium">
-                            {decision.case_title}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={categoryColors[decision.category]}>
-                              {decision.category.replace(/_/g, ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[decision.status]}>
-                              {decision.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(decision.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(decision.updated_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/cases/${decision.case_id}`}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="transactions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Transaction Decisions</CardTitle>
-                <CardDescription>
-                  All decisions made on suspicious transactions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingData ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading...</div>
-                ) : filteredTxnDecisions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No transaction decisions found
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Transaction</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead
-                          className="cursor-pointer select-none"
-                          onClick={() => toggleSort('created_at')}
-                        >
-                          <span className="flex items-center gap-1">
-                            Created <ArrowUpDown className="h-3 w-3" />
-                          </span>
-                        </TableHead>
-                        <TableHead
-                          className="cursor-pointer select-none"
-                          onClick={() => toggleSort('updated_at')}
-                        >
-                          <span className="flex items-center gap-1">
-                            Updated <ArrowUpDown className="h-3 w-3" />
-                          </span>
-                        </TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTxnDecisions.map((decision) => (
-                        <TableRow key={decision.decision_id}>
-                          <TableCell className="font-medium">
-                            Transaction #{decision.txn_id}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={categoryColors[decision.category]}>
-                              {decision.category.replace(/_/g, ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[decision.status]}>
-                              {decision.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(decision.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(decision.updated_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to="/transactions">
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            </CardTitle>
+            <CardDescription>
+              All decisions made on fraud cases
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingData ? (
+              <div className="text-center py-8 text-muted-foreground">Loading...</div>
+            ) : filteredCaseDecisions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No case decisions found
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Case</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none"
+                      onClick={() => toggleSort('created_at')}
+                    >
+                      <span className="flex items-center gap-1">
+                        Created <ArrowUpDown className="h-3 w-3" />
+                      </span>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none"
+                      onClick={() => toggleSort('updated_at')}
+                    >
+                      <span className="flex items-center gap-1">
+                        Updated <ArrowUpDown className="h-3 w-3" />
+                      </span>
+                    </TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCaseDecisions.map((decision) => (
+                    <TableRow key={decision.decision_id}>
+                      <TableCell className="font-medium">
+                        {decision.case_title}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={categoryColors[decision.category]}>
+                          {decision.category.replace(/_/g, ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[decision.status]}>
+                          {decision.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(decision.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(decision.updated_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/cases/${decision.case_id}`}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
