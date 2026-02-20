@@ -26,7 +26,7 @@ import QueryDebugger from "./pages/QueryDebugger";
 import DatabaseSchema from "./pages/DatabaseSchema";
 import AdminDecisions from "./pages/AdminDecisions";
 import MyDecisions from "./pages/MyDecisions";
-import AdminFeedback from "./pages/AdminFeedback";
+
 import ProjectReport from "./pages/ProjectReport";
 import InvestigatorPerformance from "./pages/InvestigatorPerformance";
 import Blacklist from "./pages/Blacklist";
@@ -67,7 +67,7 @@ const App = () => (
             <Route path="/database-schema" element={<P><DatabaseSchema /></P>} />
             <Route path="/admin-decisions" element={<P><AdminDecisions /></P>} />
             <Route path="/my-decisions" element={<P><MyDecisions /></P>} />
-            <Route path="/admin-feedback" element={<P><AdminFeedback /></P>} />
+            
             <Route path="/project-report" element={<ProjectReport />} />
             <Route path="/investigator-performance" element={<P><InvestigatorPerformance /></P>} />
             <Route path="/blacklist" element={<P><Blacklist /></P>} />

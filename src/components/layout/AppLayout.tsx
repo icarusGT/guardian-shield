@@ -20,7 +20,7 @@ import {
   Database,
   PlusCircle,
   Gavel,
-  MessageSquareText,
+  
   Star,
   ShieldBan,
 } from 'lucide-react';
@@ -37,7 +37,7 @@ const navigation = [
   { name: 'Case Outcomes', href: '/my-decisions', icon: Gavel, roles: [4] },
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },
   { name: 'Approvals', href: '/admin-decisions', icon: Gavel, roles: [1] },
-  { name: 'Investigator Feedback', href: '/admin-feedback', icon: MessageSquareText, roles: [1] },
+  
   { name: 'Users', href: '/users', icon: Users, roles: [1] },
   { name: 'Investigations', href: '/investigations', icon: ClipboardList, roles: [1, 2] },
   { name: 'Performance', href: '/investigator-performance', icon: Star, roles: [1, 2] },
