@@ -273,7 +273,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Gavel className="h-4 w-4" />
-            Decision
+            Investigator Decision
             {decisions.length > 0 && (() => {
               const topDecision = decisions.reduce((best, d) => {
                 const p: Record<string, number> = { DRAFT: 1, FINAL: 2, COMMUNICATED: 3 };
@@ -291,7 +291,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
             <Button
               onClick={() => { resetForm(); setIsCreateOpen(true); }}
               size="sm"
-              className="gap-2"
+              className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-0"
             >
               <Gavel className="h-4 w-4" />
               Create Decision
@@ -385,7 +385,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                         size="sm"
                         onClick={() => setConfirmCommunicateDecision(decision)}
                         disabled={communicating}
-                        className="gap-1 btn-glow-green"
+                        className="gap-1 bg-orange-500 hover:bg-orange-600 text-white border-0"
                       >
                         <Megaphone className="h-3 w-3" />
                         Communicate Decision
