@@ -1,7 +1,7 @@
 // Last updated: 25th January 2026
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { displayRiskLabel } from '@/lib/riskLabels';
+import { displayRiskLabel, displaySeverityLabel, severityDisplayColors } from '@/lib/riskLabels';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useCaseStatusRealtime } from '@/hooks/useCaseStatusRealtime';
@@ -551,7 +551,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-sm text-muted-foreground">#{c.case_id}</span>
                           <span className="font-medium text-sm">{c.title}</span>
-                          <Badge className={severityColors[c.severity]} variant="outline">{c.severity}</Badge>
+                          <Badge className={severityDisplayColors[displaySeverityLabel(c.severity)] || severityColors[c.severity]} variant="outline">{displaySeverityLabel(c.severity)}</Badge>
                           <Badge className={statusColors[c.status]} variant="outline">{c.status.replace('_', ' ')}</Badge>
                           <Badge className="bg-amber-100 text-amber-700" variant="outline">Draft</Badge>
                         </div>
@@ -588,7 +588,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <span className="font-mono text-sm text-muted-foreground">#{c.case_id}</span>
                           <span className="font-medium text-sm">{c.title}</span>
-                          <Badge className={severityColors[c.severity]} variant="outline">{c.severity}</Badge>
+                          <Badge className={severityDisplayColors[displaySeverityLabel(c.severity)] || severityColors[c.severity]} variant="outline">{displaySeverityLabel(c.severity)}</Badge>
                           <Badge className={statusColors[c.status]} variant="outline">{c.status.replace('_', ' ')}</Badge>
                           <Badge variant="outline" className="text-muted-foreground italic">No Decision</Badge>
                         </div>
@@ -863,7 +863,7 @@ export default function Dashboard() {
                           <Badge variant="outline">{c.category.replace('_', ' ')}</Badge>
                         </td>
                         <td className="py-3 px-4">
-                          <Badge className={severityColors[c.severity]}>{c.severity}</Badge>
+                          <Badge className={severityDisplayColors[displaySeverityLabel(c.severity)] || severityColors[c.severity]}>{displaySeverityLabel(c.severity)}</Badge>
                         </td>
                         <td className="py-3 px-4">
                           <Badge className={statusColors[c.status]}>

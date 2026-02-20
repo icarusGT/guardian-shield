@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { displaySeverityLabel, severityDisplayColors } from '@/lib/riskLabels';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -325,7 +326,7 @@ export default function Investigations() {
                           <td className="py-3 px-4 font-mono text-sm">#{c.case_id}</td>
                           <td className="py-3 px-4 font-medium">{c.title}</td>
                           <td className="py-3 px-4">
-                            <Badge className={severityColors[c.severity]}>{c.severity}</Badge>
+                            <Badge className={severityDisplayColors[displaySeverityLabel(c.severity)] || severityColors[c.severity]}>{displaySeverityLabel(c.severity)}</Badge>
                           </td>
                           <td className="py-3 px-4">
                             <Badge className={statusColors[c.status]}>
