@@ -774,7 +774,68 @@ export default function CaseDetail() {
               );
             })()}
 
-            {/* Assigned Investigator */}
+            {/* Investigator Status Toggle */}
+            {isInvestigator && myInvestigatorId && caseData.status !== 'CLOSED' && (
+              <Card className="glass-card border-primary/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Clock className="h-4 w-4" />
+                    Case Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className={statusColors[caseData.status]}>
+                        {caseData.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    {caseData.status === 'OPEN' && (
+                      <Button
+                        size="sm"
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          const { data, error } = await supabase.rpc('update_case_status', {
+                            p_case_id: caseData.case_id,
+                            p_new_status: 'UNDER_INVESTIGATION' as any,
+                            p_comment: 'Started investigation',
+                          });
+                          if (error) { toast.error(error.message); return; }
+                          const result = data?.[0];
+                          if (result && !result.success) { toast.error(result.message); return; }
+                          toast.success('Status changed to Under Investigation');
+                          fetchCaseData();
+                        }}
+                      >
+                        Start Investigation
+                      </Button>
+                    )}
+                    {caseData.status === 'UNDER_INVESTIGATION' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          const { data, error } = await supabase.rpc('update_case_status', {
+                            p_case_id: caseData.case_id,
+                            p_new_status: 'OPEN' as any,
+                            p_comment: 'Returned to open',
+                          });
+                          if (error) { toast.error(error.message); return; }
+                          const result = data?.[0];
+                          if (result && !result.success) { toast.error(result.message); return; }
+                          toast.success('Status changed to Open');
+                          fetchCaseData();
+                        }}
+                      >
+                        Return to Open
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {investigator && (
               <Card className="glass-card">
                 <CardHeader>
@@ -850,7 +911,7 @@ export default function CaseDetail() {
                   <AdminCloseCaseButton
                     caseId={parseInt(caseId)}
                     currentStatus={caseData.status}
-                    hasFinalizedDecision={caseDecisions.some(d => d.status === 'FINAL' || d.status === 'COMMUNICATED')}
+                    hasCommunicatedDecision={caseDecisions.some(d => d.status === 'COMMUNICATED')}
                     onStatusChanged={fetchCaseData}
                   />
                 </CardContent>
