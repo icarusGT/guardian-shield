@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { displaySeverityLabel, severityDisplayColors } from '@/lib/riskLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -370,8 +371,8 @@ export default function ChannelSuspiciousRanking() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge className={severityColors[row.severity] || severityColors['No Case']}>
-                              {row.severity}
+                            <Badge className={severityDisplayColors[displaySeverityLabel(row.severity)] || severityColors[row.severity] || severityColors['No Case']}>
+                              {row.severity === 'No Case' ? row.severity : displaySeverityLabel(row.severity)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-medium">{row.total_txn}</TableCell>

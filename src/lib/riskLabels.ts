@@ -30,3 +30,24 @@ export function getRiskColorClass(riskLevel: string): string {
   const label = displayRiskLabel(riskLevel);
   return riskDisplayColors[label] || 'bg-green-100 text-green-700';
 }
+
+/**
+ * Maps case severity values to display labels.
+ * LOW → SAFE, MEDIUM → SUSPICIOUS, HIGH → CRITICAL
+ */
+const SEVERITY_DISPLAY_MAP: Record<string, string> = {
+  LOW: 'SAFE',
+  MEDIUM: 'SUSPICIOUS',
+  HIGH: 'CRITICAL',
+};
+
+export function displaySeverityLabel(severity: string): string {
+  return SEVERITY_DISPLAY_MAP[severity] || severity;
+}
+
+/** Color classes keyed by display severity label */
+export const severityDisplayColors: Record<string, string> = {
+  SAFE: 'bg-green-100 text-green-700',
+  SUSPICIOUS: 'bg-amber-100 text-amber-700',
+  CRITICAL: 'bg-red-100 text-red-700',
+};

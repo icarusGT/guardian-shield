@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { displaySeverityLabel, severityDisplayColors } from '@/lib/riskLabels';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -530,8 +531,8 @@ export default function CaseDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Severity</p>
-                    <Badge className={severityColors[caseData.severity]}>
-                      {caseData.severity}
+                    <Badge className={severityDisplayColors[displaySeverityLabel(caseData.severity)] || severityColors[caseData.severity]}>
+                      {displaySeverityLabel(caseData.severity)}
                     </Badge>
                   </div>
                   <div>

@@ -1,4 +1,5 @@
 // Last updated: 20th February 2026
+import { displaySeverityLabel, severityDisplayColors } from '@/lib/riskLabels';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
@@ -246,7 +247,7 @@ export default function Cases() {
                           <Badge variant="outline">{c.category.replace('_', ' ')}</Badge>
                         </td>
                         <td className="py-3 px-4">
-                          <Badge className={severityColors[c.severity]}>{c.severity}</Badge>
+                          <Badge className={severityDisplayColors[displaySeverityLabel(c.severity)] || severityColors[c.severity]}>{displaySeverityLabel(c.severity)}</Badge>
                         </td>
                         <td className="py-3 px-4">
                           <Badge className={statusColors[c.status]}>
