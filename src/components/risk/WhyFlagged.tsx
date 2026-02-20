@@ -14,7 +14,6 @@ interface Props {
 const riskColors: Record<string, string> = {
   high: 'bg-red-100 text-red-700',
   suspicious: 'bg-amber-100 text-amber-700',
-  normal: 'bg-green-100 text-green-700',
   low: 'bg-green-100 text-green-700',
 };
 
