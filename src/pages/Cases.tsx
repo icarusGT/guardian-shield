@@ -255,7 +255,10 @@ export default function Cases() {
                               {decisionMap.get(c.case_id)}
                             </Badge>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">No Decision</span>
+                            <span className="text-xs text-muted-foreground italic">
+                              {/* Customers see "Pending" since RLS hides non-communicated decisions */}
+                              Pending
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-muted-foreground text-sm">
