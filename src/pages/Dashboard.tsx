@@ -226,17 +226,17 @@ export default function Dashboard() {
               }
             });
 
-            // New assignments: OPEN or UNDER_INVESTIGATION without a decision
+            // New assignments: assigned but still OPEN (not yet moved to UNDER_INVESTIGATION)
             const newAssignments = (casesData as FraudCase[]).filter(
-              (c) => (c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION') && !decisionMap.has(c.case_id)
+              (c) => c.status === 'OPEN'
             );
 
-            // Draft cases: have a DRAFT decision (highest)
+            // Draft cases: UNDER_INVESTIGATION with a DRAFT decision (feedback started but not finalized)
             const draftCases = (casesData as FraudCase[]).filter(
-              (c) => decisionMap.get(c.case_id) === 'DRAFT'
+              (c) => c.status === 'UNDER_INVESTIGATION' && decisionMap.get(c.case_id) === 'DRAFT'
             );
 
-            // Finalized cases: have a FINAL decision (not communicated)
+            // Finalized cases: have a FINAL decision (waiting for admin to communicate)
             const finalizedCases = (casesData as FraudCase[]).filter(
               (c) => decisionMap.get(c.case_id) === 'FINAL'
             );
@@ -473,7 +473,7 @@ export default function Dashboard() {
         {isInvestigator && (
           <>
             {/* Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card
                 className="glass-card cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
                 onClick={() => navigate('/cases?decision=none')}
@@ -488,7 +488,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{invDecisionStats.newAssignments.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">No decision yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Assigned, not yet started</p>
                 </CardContent>
               </Card>
 
@@ -506,25 +506,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{invDecisionStats.draftCases.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Awaiting finalization</p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className="glass-card cursor-pointer hover:shadow-md hover:border-orange-300 transition-all border-orange-200 bg-orange-50/30"
-                onClick={() => navigate('/cases?decision=DRAFT')}
-              >
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-700">
-                    Ready to Finalize
-                  </CardTitle>
-                  <div className="p-2 rounded-lg bg-orange-500/10">
-                    <Zap className="h-4 w-4 text-orange-500" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-orange-700">{invDecisionStats.draftCases.length}</div>
-                  <p className="text-xs text-orange-600 mt-1">Action required</p>
+                  <p className="text-xs text-muted-foreground mt-1">Feedback started, not finalized</p>
                 </CardContent>
               </Card>
 
