@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ShieldBan, Search, Trash2, Plus } from 'lucide-react';
+import { ShieldBan, Search, Trash2, Plus, AlertTriangle, Eye } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { useAllBlacklistRecommendations } from '@/hooks/useBlacklistRecommendations';
+import BlacklistRecommendationBanner from '@/components/blacklist/BlacklistRecommendationBanner';
+import ReviewBlacklistModal from '@/components/blacklist/ReviewBlacklistModal';
+import BlacklistSettingsPanel from '@/components/blacklist/BlacklistSettingsPanel';
 
 interface BlacklistEntry {
   id: number;
@@ -36,6 +40,9 @@ export default function Blacklist() {
   const [newRecipient, setNewRecipient] = useState('');
   const [newReason, setNewReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [reviewRecipient, setReviewRecipient] = useState<string | null>(null);
+
+  const { recommendations, loading: recsLoading, refresh: refreshRecs } = useAllBlacklistRecommendations();
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth');
@@ -72,6 +79,7 @@ export default function Blacklist() {
       setNewReason('');
       setAddOpen(false);
       fetchEntries();
+      refreshRecs();
     }
     setSubmitting(false);
   };
@@ -84,6 +92,7 @@ export default function Blacklist() {
     } else {
       toast.success('Removed from blacklist');
       fetchEntries();
+      refreshRecs();
     }
   };
 
@@ -92,6 +101,10 @@ export default function Blacklist() {
       e.recipient_value.toLowerCase().includes(search.toLowerCase()) ||
       (e.reason || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  // Non-blacklisted recommendations
+  const pendingRecs = recommendations.filter(r => !r.isAlreadyBlacklisted);
+  const selectedRec = pendingRecs.find(r => r.recipientAccount === reviewRecipient);
 
   if (loading) return null;
 
@@ -144,6 +157,38 @@ export default function Blacklist() {
           </Dialog>
         </div>
 
+        {/* Recommendation Banners */}
+        {pendingRecs.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Recommended for Blacklisting ({pendingRecs.length})
+            </h2>
+            {pendingRecs.map((rec) => (
+              <div key={rec.recipientAccount} className="space-y-2">
+                <BlacklistRecommendationBanner recommendation={rec} />
+                {isAdmin && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                      onClick={() => setReviewRecipient(rec.recipientAccount)}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Review & Blacklist
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Admin Settings */}
+        {isAdmin && (
+          <BlacklistSettingsPanel onThresholdsChanged={refreshRecs} />
+        )}
+
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -164,35 +209,59 @@ export default function Blacklist() {
               </div>
             ) : (
               <div className="divide-y">
-                {filtered.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-medium">{entry.recipient_value}</span>
-                        <Badge variant="destructive" className="text-xs">Blacklisted</Badge>
+                {filtered.map((entry) => {
+                  const rec = recommendations.find(r => r.recipientAccount === entry.recipient_value);
+                  return (
+                    <div key={entry.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-medium">{entry.recipient_value}</span>
+                          <Badge variant="destructive" className="text-xs">Blacklisted</Badge>
+                          {rec && (
+                            <Badge variant="outline" className="text-xs border-amber-400 text-amber-700">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Recommended
+                            </Badge>
+                          )}
+                        </div>
+                        {entry.reason && (
+                          <p className="text-sm text-muted-foreground">{entry.reason}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Added {new Date(entry.created_at).toLocaleDateString()}
+                        </p>
                       </div>
-                      {entry.reason && (
-                        <p className="text-sm text-muted-foreground">{entry.reason}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Added {new Date(entry.created_at).toLocaleDateString()}
-                      </p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleRemove(entry.id, entry.recipient_value)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleRemove(entry.id, entry.recipient_value)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Review & Blacklist Modal */}
+      {selectedRec && user && (
+        <ReviewBlacklistModal
+          recommendation={selectedRec}
+          userId={user.id}
+          open={!!reviewRecipient}
+          onOpenChange={(open) => { if (!open) setReviewRecipient(null); }}
+          onBlacklisted={() => {
+            setReviewRecipient(null);
+            fetchEntries();
+            refreshRecs();
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
