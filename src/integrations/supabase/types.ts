@@ -146,6 +146,7 @@ export type Database = {
           admin_user_id: string
           case_id: number
           category: Database["public"]["Enums"]["decision_category"]
+          communicated_at: string | null
           created_at: string
           customer_message: string | null
           decision_id: number
@@ -157,6 +158,7 @@ export type Database = {
           admin_user_id: string
           case_id: number
           category: Database["public"]["Enums"]["decision_category"]
+          communicated_at?: string | null
           created_at?: string
           customer_message?: string | null
           decision_id?: never
@@ -168,6 +170,7 @@ export type Database = {
           admin_user_id?: string
           case_id?: number
           category?: Database["public"]["Enums"]["decision_category"]
+          communicated_at?: string | null
           created_at?: string
           customer_message?: string | null
           decision_id?: never

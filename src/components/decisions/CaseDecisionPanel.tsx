@@ -51,7 +51,9 @@ interface CaseDecision {
   customer_message: string | null;
   internal_notes: string | null;
   created_at: string;
+  updated_at: string;
   admin_user_id: string;
+  communicated_at: string | null;
 }
 
 interface CaseDecisionPanelProps {
@@ -183,13 +185,32 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   };
 
   const handleCommunicate = async (decision: CaseDecision) => {
+    if (decision.status !== 'FINAL') {
+      toast.error('Only finalized decisions can be communicated');
+      return;
+    }
     setCommunicating(true);
     try {
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from('case_decisions')
-        .update({ status: 'COMMUNICATED' as any, updated_at: new Date().toISOString() })
+        .update({
+          status: 'COMMUNICATED' as any,
+          communicated_at: now,
+          updated_at: now,
+        } as any)
         .eq('decision_id', decision.decision_id);
       if (error) throw error;
+
+      // Insert status history entry
+      await supabase.from('case_history').insert({
+        case_id: caseId,
+        old_status: 'UNDER_INVESTIGATION' as any,
+        new_status: 'UNDER_INVESTIGATION' as any,
+        changed_by_user: user!.id,
+        comment: 'Decision Communicated',
+      });
+
       toast.success('Decision communicated to customer');
       setConfirmCommunicateDecision(null);
       onDecisionChanged?.();
@@ -364,7 +385,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                         Decision Communicated
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        Communicated at: {new Date(decision.created_at).toLocaleString()}
+                        Communicated at: {new Date(decision.communicated_at || decision.updated_at).toLocaleString()}
                       </span>
                     </div>
                   )}
