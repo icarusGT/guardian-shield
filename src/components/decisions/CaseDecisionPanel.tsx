@@ -21,6 +21,16 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import {
   Gavel,
@@ -76,6 +86,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   const [submitting, setSubmitting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [communicating, setCommunicating] = useState(false);
+  const [confirmCommunicateDecision, setConfirmCommunicateDecision] = useState<CaseDecision | null>(null);
 
   const hasFinalizedDecision = decisions.some(d => d.status === 'FINAL' || d.status === 'COMMUNICATED');
   const hasDraftDecision = decisions.some(d => d.status === 'DRAFT');
@@ -176,10 +187,11 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
     try {
       const { error } = await supabase
         .from('case_decisions')
-        .update({ status: 'COMMUNICATED' as any })
+        .update({ status: 'COMMUNICATED' as any, updated_at: new Date().toISOString() })
         .eq('decision_id', decision.decision_id);
       if (error) throw error;
-      toast.success('Decision marked as communicated');
+      toast.success('Decision communicated to customer');
+      setConfirmCommunicateDecision(null);
       onDecisionChanged?.();
     } catch (error: any) {
       toast.error(`Failed to communicate: ${error.message}`);
@@ -329,28 +341,39 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                     </div>
                   )}
 
-                  {/* Admin action: Mark as Communicated (only on FINAL) */}
+                  {/* Admin action: Communicate Decision (only on FINAL) */}
                   {canCommunicate(decision) && (
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2 pt-1 animate-fade-in">
                       <Button
                         size="sm"
-                        onClick={() => handleCommunicate(decision)}
+                        onClick={() => setConfirmCommunicateDecision(decision)}
                         disabled={communicating}
                         className="gap-1 btn-glow-green"
                       >
                         <Megaphone className="h-3 w-3" />
-                        {communicating ? 'Updating...' : 'Mark as Communicated'}
+                        Communicate Decision
                       </Button>
                     </div>
                   )}
 
-                  {/* Status message */}
-                  {isLocked && (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
+                  {/* Communicated success badge */}
+                  {decision.status === 'COMMUNICATED' && (
+                    <div className="flex flex-col gap-1 pt-1 animate-fade-in">
+                      <Badge className="bg-green-100 text-green-700 border-green-200 gap-1 w-fit">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Decision Communicated
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        Communicated at: {new Date(decision.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Finalized read-only message */}
+                  {decision.status === 'FINAL' && !canCommunicate(decision) && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Lock className="h-3 w-3" />
-                      {decision.status === 'COMMUNICATED'
-                        ? 'Decision communicated to customer'
-                        : 'Read-only — Decision finalized'}
+                      Read-only — Decision finalized
                     </p>
                   )}
                 </div>
@@ -410,6 +433,31 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Communicate Confirmation Dialog */}
+      <AlertDialog open={!!confirmCommunicateDecision} onOpenChange={(open) => { if (!open) setConfirmCommunicateDecision(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              Communicate Decision
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this decision as communicated to the customer? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={communicating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmCommunicateDecision && handleCommunicate(confirmCommunicateDecision)}
+              disabled={communicating}
+              className="btn-glow-green bg-green-600 hover:bg-green-700"
+            >
+              {communicating ? 'Communicating...' : 'Yes, Communicate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
