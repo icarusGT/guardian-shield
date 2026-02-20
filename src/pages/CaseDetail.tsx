@@ -89,6 +89,8 @@ interface CaseDecision {
   updated_at: string;
   admin_user_id: string;
   communicated_at: string | null;
+  admin_approved: boolean;
+  approved_at: string | null;
 }
 
 interface AssignedInvestigator {
@@ -958,6 +960,7 @@ export default function CaseDetail() {
                     caseId={parseInt(caseId)}
                     currentStatus={caseData.status}
                     hasCommunicatedDecision={caseDecisions.some(d => d.status === 'COMMUNICATED')}
+                    hasApprovedDecision={caseDecisions.some(d => d.admin_approved === true)}
                     onStatusChanged={fetchCaseData}
                   />
                 </CardContent>

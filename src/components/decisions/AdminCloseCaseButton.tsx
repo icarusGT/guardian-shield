@@ -19,6 +19,7 @@ interface AdminCloseCaseButtonProps {
   caseId: number;
   currentStatus: string;
   hasCommunicatedDecision: boolean;
+  hasApprovedDecision: boolean;
   onStatusChanged?: () => void;
 }
 
@@ -26,6 +27,7 @@ export default function AdminCloseCaseButton({
   caseId,
   currentStatus,
   hasCommunicatedDecision,
+  hasApprovedDecision,
   onStatusChanged,
 }: AdminCloseCaseButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +35,7 @@ export default function AdminCloseCaseButton({
   const [submitting, setSubmitting] = useState(false);
 
   const isClosed = currentStatus === 'CLOSED';
+  const canClose = hasCommunicatedDecision && hasApprovedDecision;
 
   const handleClose = async () => {
     setSubmitting(true);
@@ -78,17 +81,21 @@ export default function AdminCloseCaseButton({
         variant="destructive"
         size="sm"
         className="w-full gap-2"
-        disabled={!hasCommunicatedDecision}
+        disabled={!canClose}
       >
         <XCircle className="h-4 w-4" />
         Close Case
       </Button>
 
-      {!hasCommunicatedDecision && (
+      {!canClose && (
         <Alert variant="destructive" className="mt-2">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            The decision must be communicated before the case can be closed.
+            {!hasCommunicatedDecision && !hasApprovedDecision
+              ? 'You must communicate and approve the decision before closing the case.'
+              : !hasCommunicatedDecision
+              ? 'The decision must be communicated before the case can be closed.'
+              : 'The decision must be approved before the case can be closed.'}
           </AlertDescription>
         </Alert>
       )}
