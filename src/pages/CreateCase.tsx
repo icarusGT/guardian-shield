@@ -155,8 +155,13 @@ export default function CreateCase() {
 
     // For customers, transaction details are required
     if (isCustomer) {
-      if (!txnData.txn_amount || parseFloat(txnData.txn_amount) <= 0) {
+      const amount = parseFloat(txnData.txn_amount);
+      if (!txnData.txn_amount || isNaN(amount) || amount <= 0) {
         toast.error('Please enter a valid transaction amount');
+        return;
+      }
+      if (amount > 9999999999999.99) {
+        toast.error('Transaction amount exceeds maximum allowed value');
         return;
       }
     }
