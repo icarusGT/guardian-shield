@@ -524,18 +524,9 @@ export default function CaseDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Severity</p>
-                    {(() => {
-                      // Derive severity from linked transaction (single source of truth)
-                      const txnRisk = linkedTransactions[0]?.risk_level;
-                      const derivedSeverity = txnRisk
-                        ? txnRisk === 'high' ? 'HIGH' : txnRisk === 'suspicious' ? 'MEDIUM' : 'LOW'
-                        : caseData.severity;
-                      return (
-                        <Badge className={severityColors[derivedSeverity]}>
-                          {derivedSeverity}
-                        </Badge>
-                      );
-                    })()}
+                    <Badge className={severityColors[caseData.severity]}>
+                      {caseData.severity}
+                    </Badge>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
