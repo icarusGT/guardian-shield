@@ -735,21 +735,23 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link to="/cases" className="block">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <FileText className="h-5 w-5 text-primary" />
+          {!isCustomer && (
+            <Link to="/cases" className="block">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">View Cases</CardTitle>
+                      <CardDescription className="text-xs">Browse all fraud cases</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">View Cases</CardTitle>
-                    <CardDescription className="text-xs">Browse all fraud cases</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
+                </CardHeader>
+              </Card>
+            </Link>
+          )}
 
           {(isAdmin || isInvestigator) && (
             <Link to="/investigations" className="block">
