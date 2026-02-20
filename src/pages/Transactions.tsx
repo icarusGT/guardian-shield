@@ -171,7 +171,7 @@ export default function Transactions() {
       t.txn_id.toString().includes(search) ||
       t.txn_location?.toLowerCase().includes(search.toLowerCase());
     const matchesChannel = channelFilter === 'all' || t.txn_channel === channelFilter;
-    const matchesSuspicious = !showOnlySuspicious || t.is_flagged;
+    const matchesSuspicious = !showOnlySuspicious || t.risk_level === 'suspicious' || t.risk_level === 'high';
     return matchesSearch && matchesChannel && matchesSuspicious;
   });
 
