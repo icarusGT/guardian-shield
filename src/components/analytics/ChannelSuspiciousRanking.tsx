@@ -107,7 +107,7 @@ export default function ChannelSuspiciousRanking() {
       // Fetch transactions (with or without date filter)
       let txnQuery = supabase
         .from('transactions')
-        .select('txn_id, txn_channel, customer_id, occurred_at');
+        .select('txn_id, txn_channel, customer_id, occurred_at, risk_score, risk_level');
 
       if (fromDate) {
         txnQuery = txnQuery.gte('occurred_at', fromDate);
@@ -132,19 +132,10 @@ export default function ChannelSuspiciousRanking() {
 
       const txnIds = txnData.map((t) => t.txn_id);
 
-      // Fetch suspicious transactions for these txn_ids
-      const { data: suspData, error: suspError } = await supabase
-        .from('suspicious_transactions')
-        .select('txn_id, risk_score, risk_level')
-        .in('txn_id', txnIds);
-
-      if (suspError) {
-        console.error('Error fetching suspicious transactions:', suspError);
-      }
-
-      // Create a map for suspicious data
-      const suspMap = new Map(
-        (suspData || []).map((s) => [s.txn_id, { risk_score: s.risk_score, risk_level: s.risk_level }])
+      // Use risk data directly from transactions table (risk_level is lowercase: 'suspicious', 'high', 'low')
+      // No need to query suspicious_transactions — transactions.risk_level is the source of truth
+      const txnRiskMap = new Map(
+        txnData.map((t) => [t.txn_id, { risk_score: (t as any).risk_score || 0, risk_level: (t as any).risk_level || 'low' }])
       );
 
       if (groupBySeverity) {
@@ -190,12 +181,12 @@ export default function ChannelSuspiciousRanking() {
           const channel = txn.txn_channel || 'OTHER';
           const caseId = txnToCaseMap.get(txn.txn_id);
           const severity = caseId ? (caseSeverityMap.get(caseId) || 'No Case') : 'No Case';
-          const suspInfo = suspMap.get(txn.txn_id);
+          const suspInfo = txnRiskMap.get(txn.txn_id);
 
           const key = `${channel}|${severity}`;
           const existing = aggregateMap.get(key) || { total: 0, suspicious: 0, totalScore: 0, scoreCount: 0 };
 
-          const isSuspicious = suspInfo && (suspInfo.risk_level === 'MEDIUM' || suspInfo.risk_level === 'HIGH');
+          const isSuspicious = suspInfo && (suspInfo.risk_level === 'suspicious' || suspInfo.risk_level === 'high');
 
           aggregateMap.set(key, {
             total: existing.total + 1,
@@ -231,9 +222,9 @@ export default function ChannelSuspiciousRanking() {
         txnData.forEach((txn) => {
           const channel = txn.txn_channel || 'OTHER';
           const existing = channelMap.get(channel) || { total: 0, suspicious: 0, totalScore: 0, suspCount: 0 };
-          const suspInfo = suspMap.get(txn.txn_id);
+          const suspInfo = txnRiskMap.get(txn.txn_id);
 
-          const isSuspicious = suspInfo && (suspInfo.risk_level === 'MEDIUM' || suspInfo.risk_level === 'HIGH');
+          const isSuspicious = suspInfo && (suspInfo.risk_level === 'suspicious' || suspInfo.risk_level === 'high');
 
           channelMap.set(channel, {
             total: existing.total + 1,

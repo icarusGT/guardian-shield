@@ -72,7 +72,7 @@ export default function ChannelSeverityRanking() {
       // Fetch transactions with suspicious data
       const { data: txnData, error: txnError } = await supabase
         .from('transactions')
-        .select('txn_id, txn_channel, customer_id');
+        .select('txn_id, txn_channel, customer_id, risk_score, risk_level');
 
       if (txnError) {
         console.error('Error fetching transactions:', txnError);
@@ -88,17 +88,6 @@ export default function ChannelSeverityRanking() {
       }
 
       const txnIds = txnData.map((t) => t.txn_id);
-      const customerIds = [...new Set(txnData.map((t) => t.customer_id))];
-
-      // Fetch suspicious transactions
-      const { data: suspData, error: suspError } = await supabase
-        .from('suspicious_transactions')
-        .select('txn_id, risk_score, risk_level')
-        .in('txn_id', txnIds);
-
-      if (suspError) {
-        console.error('Error fetching suspicious transactions:', suspError);
-      }
 
       // Fetch case_transactions to link txn to cases
       const { data: caseTransData, error: ctError } = await supabase
@@ -128,13 +117,12 @@ export default function ChannelSeverityRanking() {
         }
       }
 
-      // Create maps for lookups
-      const suspMap = new Map(
-        (suspData || []).map((s) => [s.txn_id, { risk_score: s.risk_score, risk_level: s.risk_level }])
-      );
-
       const txnToCaseMap = new Map(
         (caseTransData || []).map((ct) => [ct.txn_id, ct.case_id])
+      );
+
+      const suspMap = new Map(
+        txnData.map((t) => [t.txn_id, { risk_score: t.risk_score || 0, risk_level: t.risk_level || 'low' }])
       );
 
       // Aggregate by channel + severity
@@ -154,7 +142,7 @@ export default function ChannelSeverityRanking() {
         const key = `${channel}|${severity || 'NULL'}`;
         const existing = aggregateMap.get(key) || { total: 0, suspicious: 0, totalScore: 0, scoreCount: 0 };
 
-        const isSuspicious = suspInfo && (suspInfo.risk_level === 'MEDIUM' || suspInfo.risk_level === 'HIGH');
+        const isSuspicious = suspInfo && (suspInfo.risk_level === 'suspicious' || suspInfo.risk_level === 'high');
 
         aggregateMap.set(key, {
           total: existing.total + 1,
