@@ -34,7 +34,7 @@ const navigation = [
   { name: 'Cases', href: '/cases', icon: FileText, roles: [1, 2, 3, 4] },
   { name: 'My Profile', href: '/my-profile', icon: UserCircle, roles: [4] },
   { name: 'Report Fraud', href: '/cases/new', icon: PlusCircle, roles: [4] },
-  { name: 'My Decisions', href: '/my-decisions', icon: Gavel, roles: [4] },
+  { name: 'Case Outcomes', href: '/my-decisions', icon: Gavel, roles: [4] },
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },
   { name: 'Decisions', href: '/admin-decisions', icon: Gavel, roles: [1] },
   { name: 'Feedback', href: '/admin-feedback', icon: MessageSquareText, roles: [1] },

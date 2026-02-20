@@ -206,10 +206,10 @@ export default function MyDecisions() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Gavel className="h-8 w-8" />
-              My Decisions
+              Case Outcomes
             </h1>
             <p className="text-muted-foreground mt-1">
-              View final decisions on your cases and transactions
+              Official outcomes communicated to you by the investigation team
             </p>
           </div>
           <Button onClick={fetchDecisions} variant="outline">
@@ -223,22 +223,22 @@ export default function MyDecisions() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              Decision Summary
+              Outcomes Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-background rounded-lg">
                 <div className="text-3xl font-bold text-primary">{totalDecisions}</div>
-                <p className="text-sm text-muted-foreground">Total Decisions</p>
+                <p className="text-sm text-muted-foreground">Total Outcomes</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg">
                 <div className="text-3xl font-bold text-blue-600">{caseDecisions.length}</div>
-                <p className="text-sm text-muted-foreground">Case Decisions</p>
+                <p className="text-sm text-muted-foreground">Case Outcomes</p>
               </div>
               <div className="text-center p-4 bg-background rounded-lg">
                 <div className="text-3xl font-bold text-green-600">{txnDecisions.length}</div>
-                <p className="text-sm text-muted-foreground">Transaction Decisions</p>
+                <p className="text-sm text-muted-foreground">Transaction Outcomes</p>
               </div>
             </div>
           </CardContent>
@@ -250,9 +250,9 @@ export default function MyDecisions() {
           <Card>
             <CardContent className="py-12 text-center">
               <Gavel className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Decisions Yet</h3>
+              <h3 className="text-lg font-medium mb-2">No Outcomes Yet</h3>
               <p className="text-muted-foreground mb-4">
-                You'll see final decisions here once your cases or transactions have been reviewed.
+                Official outcomes will appear here once the investigation team has reviewed and communicated their findings on your cases or transactions.
               </p>
               <Button asChild>
                 <Link to="/cases">View My Cases</Link>
@@ -264,11 +264,11 @@ export default function MyDecisions() {
             <TabsList>
               <TabsTrigger value="cases" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Case Decisions ({caseDecisions.length})
+                Case Outcomes ({caseDecisions.length})
               </TabsTrigger>
               <TabsTrigger value="transactions" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Transaction Decisions ({txnDecisions.length})
+                Transaction Outcomes ({txnDecisions.length})
               </TabsTrigger>
             </TabsList>
 
@@ -276,7 +276,7 @@ export default function MyDecisions() {
               {caseDecisions.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground">
-                    No case decisions available yet.
+                    No case outcomes have been communicated yet.
                   </CardContent>
                 </Card>
               ) : (
@@ -348,7 +348,7 @@ export default function MyDecisions() {
               {txnDecisions.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground">
-                    No transaction decisions available yet.
+                    No transaction outcomes have been communicated yet.
                   </CardContent>
                 </Card>
               ) : (
