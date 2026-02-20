@@ -16,6 +16,7 @@ import {
   Settings,
   ClipboardList,
   Terminal,
+  UserCircle,
   Database,
   PlusCircle,
   Gavel,
@@ -31,6 +32,7 @@ interface AppLayoutProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: [1, 2, 3, 4] },
   { name: 'Cases', href: '/cases', icon: FileText, roles: [1, 2, 3, 4] },
+  { name: 'My Profile', href: '/my-profile', icon: UserCircle, roles: [4] },
   { name: 'Report Fraud', href: '/cases/new', icon: PlusCircle, roles: [4] },
   { name: 'My Decisions', href: '/my-decisions', icon: Gavel, roles: [4] },
   { name: 'Transactions', href: '/transactions', icon: Activity, roles: [1, 2, 3] },

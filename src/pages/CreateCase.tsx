@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, FileText, AlertCircle, Loader2, User, DollarSign, CreditCard } from 'lucide-react';
+import { ArrowLeft, FileText, AlertCircle, Loader2, User, DollarSign, CreditCard, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -34,6 +34,7 @@ export default function CreateCase() {
   const [submitting, setSubmitting] = useState(false);
   const [loadingCustomer, setLoadingCustomer] = useState(true);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [profileComplete, setProfileComplete] = useState(true);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showCustomerSelector, setShowCustomerSelector] = useState(false);
@@ -73,7 +74,7 @@ export default function CreateCase() {
         if (isCustomer) {
           const { data, error: customerError } = await supabase
             .from('customers')
-            .select('customer_id')
+            .select('customer_id, primary_region')
             .eq('user_id', user.id)
             .single();
 
@@ -83,6 +84,7 @@ export default function CreateCase() {
 
           if (data) {
             setCustomerId(data.customer_id);
+            setProfileComplete(!!data.primary_region);
           } else {
             setError('Customer record not found. Please contact support.');
           }
@@ -323,6 +325,22 @@ export default function CreateCase() {
             </p>
           </div>
         </div>
+
+        {/* Profile completion warning for customers */}
+        {isCustomer && !profileComplete && (
+          <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <MapPin className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-medium mb-1">Complete your profile to submit a case</p>
+              <p className="text-amber-800 mb-2">
+                You must set your Primary Region in your profile before reporting fraud. This helps us detect unusual activity.
+              </p>
+              <Link to="/my-profile" className="text-primary font-medium hover:underline">
+                Go to My Profile →
+              </Link>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Case Information Card */}
@@ -669,7 +687,7 @@ export default function CreateCase() {
             <Button
               type="submit"
               className="gradient-primary flex-1"
-              disabled={submitting || !customerId || loadingCustomer}
+              disabled={submitting || !customerId || loadingCustomer || (isCustomer && !profileComplete)}
             >
               {submitting ? (
                 <>
