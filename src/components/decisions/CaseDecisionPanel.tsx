@@ -42,6 +42,7 @@ import {
   Lock,
   CheckCircle2,
   Megaphone,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface CaseDecision {
@@ -60,6 +61,7 @@ interface CaseDecisionPanelProps {
   caseId: number;
   decisions: CaseDecision[];
   onDecisionChanged?: () => void;
+  caseStatus?: string;
 }
 
 const outcomeOptions = [
@@ -74,7 +76,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   COMMUNICATED: { label: 'Communicated', color: 'bg-green-100 text-green-700' },
 };
 
-export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged }: CaseDecisionPanelProps) {
+export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged, caseStatus }: CaseDecisionPanelProps) {
   const { user, isInvestigator, isAdmin } = useAuth();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -214,11 +216,12 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
     }
   };
 
-  const canCreateDecision = isInvestigator && !hasFinalizedDecision;
+  const isCaseOpen = caseStatus === 'OPEN';
+  const canCreateDecision = isInvestigator && !hasFinalizedDecision && !isCaseOpen;
   const canEditDecision = (d: CaseDecision) =>
-    isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id;
+    isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id && !isCaseOpen;
   const canFinalizeDecision = (d: CaseDecision) =>
-    isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id;
+    isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id && !isCaseOpen;
   const canCommunicate = (d: CaseDecision) =>
     isAdmin && d.status === 'FINAL';
 
@@ -297,7 +300,15 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
         </div>
       </CardHeader>
       <CardContent>
-        {decisions.length === 0 ? (
+        {isCaseOpen && isInvestigator ? (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+            <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-amber-600" />
+            <p className="text-sm font-medium text-amber-700">Action Required</p>
+            <p className="text-xs text-amber-600 mt-1">
+              You must move the case to <strong>Under Investigation</strong> before creating or editing a decision.
+            </p>
+          </div>
+        ) : decisions.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">No decision yet.</p>
         ) : (
           <div className="space-y-3">
