@@ -29,6 +29,7 @@ import MyDecisions from "./pages/MyDecisions";
 import AdminFeedback from "./pages/AdminFeedback";
 import ProjectReport from "./pages/ProjectReport";
 import InvestigatorPerformance from "./pages/InvestigatorPerformance";
+import Blacklist from "./pages/Blacklist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/admin-feedback" element={<AdminFeedback />} />
             <Route path="/project-report" element={<ProjectReport />} />
             <Route path="/investigator-performance" element={<InvestigatorPerformance />} />
+            <Route path="/blacklist" element={<Blacklist />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           

@@ -53,23 +53,48 @@ export type Database = {
       blacklisted_recipients: {
         Row: {
           created_at: string
+          created_by: string | null
           id: number
           reason: string | null
           recipient_value: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: never
           reason?: string | null
           recipient_value: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: never
           reason?: string | null
           recipient_value?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blacklisted_recipients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "blacklisted_recipients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_safe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "blacklisted_recipients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_case_assigned_investigator"
+            referencedColumns: ["investigator_user_id"]
+          },
+        ]
       }
       case_assignments: {
         Row: {

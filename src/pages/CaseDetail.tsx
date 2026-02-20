@@ -15,6 +15,8 @@ import AdminCloseCaseButton from '@/components/decisions/AdminCloseCaseButton';
 import CaseChat from '@/components/chat/CaseChat';
 import CaseRatingModal from '@/components/ratings/CaseRatingModal';
 import InvestigatorRatingModal from '@/components/ratings/InvestigatorRatingModal';
+import BlacklistToggleButton from '@/components/blacklist/BlacklistToggleButton';
+import WhyFlagged from '@/components/risk/WhyFlagged';
 import {
   ArrowLeft,
   FileText,
@@ -570,19 +572,15 @@ export default function CaseDetail() {
                           </span>
                           <Badge variant="outline">{txn.txn_channel}</Badge>
                         </div>
-                        {txn.risk_level && (
-                          <Badge
-                            className={
-                              txn.risk_level === 'HIGH'
-                                ? 'bg-red-100 text-red-700'
-                                : txn.risk_level === 'MEDIUM'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-green-100 text-green-700'
-                            }
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            {txn.risk_level} Risk
-                          </Badge>
+                        {txn.risk_score !== undefined && txn.risk_level && (
+                          <WhyFlagged
+                            riskScore={txn.risk_score}
+                            riskLevel={txn.risk_level}
+                            txnAmount={txn.txn_amount}
+                            recipientAccount={txn.recipient_account}
+                            txnLocation={txn.txn_location}
+                            reasons={txn.reasons}
+                          />
                         )}
                       </div>
 
@@ -606,9 +604,18 @@ export default function CaseDetail() {
                           </p>
                         </div>
                         {txn.recipient_account && (
-                          <div>
+                          <div className="col-span-2">
                             <p className="text-muted-foreground">Recipient</p>
-                            <p className="font-medium">{txn.recipient_account}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{txn.recipient_account}</p>
+                              {(isAdmin || isInvestigator) && user && (
+                                <BlacklistToggleButton
+                                  recipientAccount={txn.recipient_account}
+                                  userId={user.id}
+                                  onChanged={fetchCaseData}
+                                />
+                              )}
+                            </div>
                           </div>
                         )}
                         {txn.txn_location && (
@@ -620,22 +627,7 @@ export default function CaseDetail() {
                             </p>
                           </div>
                         )}
-                        {txn.risk_score !== undefined && (
-                          <div>
-                            <p className="text-muted-foreground">Risk Score</p>
-                            <p className="font-medium">{txn.risk_score} points</p>
-                          </div>
-                        )}
                       </div>
-
-                      {txn.reasons && (
-                        <div className="pt-2 border-t">
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Risk Factors
-                          </p>
-                          <p className="text-sm text-amber-700">{txn.reasons}</p>
-                        </div>
-                      )}
                     </div>
                   ))
                 ) : (
