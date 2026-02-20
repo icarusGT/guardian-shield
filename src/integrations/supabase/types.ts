@@ -223,6 +223,7 @@ export type Database = {
           feedback_id: number
           investigation_note: string | null
           investigator_id: number
+          selected_categories: string | null
           subcategory: string | null
           updated_at: string
         }
@@ -235,6 +236,7 @@ export type Database = {
           feedback_id?: never
           investigation_note?: string | null
           investigator_id: number
+          selected_categories?: string | null
           subcategory?: string | null
           updated_at?: string
         }
@@ -247,6 +249,7 @@ export type Database = {
           feedback_id?: never
           investigation_note?: string | null
           investigator_id?: number
+          selected_categories?: string | null
           subcategory?: string | null
           updated_at?: string
         }

@@ -1,16 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -59,24 +53,39 @@ const subcategoryMap: Record<string, { value: string; label: string }[]> = {
 
 export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSubmitted }: CaseFeedbackFormProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [category, setCategory] = useState('');
-  const [subcategory, setSubcategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [investigationNote, setInvestigationNote] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleCategoryChange = (val: string) => {
-    setCategory(val);
-    setSubcategory('');
+  const availableSubcategories = useMemo(() => {
+    return selectedCategories.flatMap(cat => subcategoryMap[cat] || []);
+  }, [selectedCategories]);
+
+  const toggleCategory = (val: string) => {
+    setSelectedCategories(prev => {
+      const next = prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val];
+      // Remove subcategories that no longer belong to selected categories
+      const validSubs = next.flatMap(cat => (subcategoryMap[cat] || []).map(s => s.value));
+      setSelectedSubcategories(prev => prev.filter(s => validSubs.includes(s)));
+      return next;
+    });
+  };
+
+  const toggleSubcategory = (val: string) => {
+    setSelectedSubcategories(prev =>
+      prev.includes(val) ? prev.filter(s => s !== val) : [...prev, val]
+    );
   };
 
   const handleSubmit = async () => {
-    if (!category) {
-      toast.error('Please select a feedback category');
+    if (selectedCategories.length === 0) {
+      toast.error('Please select at least one category');
       return;
     }
-    if (!subcategory) {
-      toast.error('Please select a subcategory');
+    if (selectedSubcategories.length === 0) {
+      toast.error('Please select at least one subcategory');
       return;
     }
     if (!investigationNote.trim()) {
@@ -89,8 +98,9 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
       const { error } = await supabase.from('case_feedback').insert({
         case_id: caseId,
         investigator_id: investigatorId,
-        category: category as any,
-        subcategory: subcategory,
+        category: selectedCategories[0] as any,
+        selected_categories: selectedCategories.join(','),
+        subcategory: selectedSubcategories.join(','),
         investigation_note: investigationNote.trim(),
         comment: comment.trim() || null,
         approval_status: 'PENDING' as any,
@@ -100,8 +110,8 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
 
       toast.success('Investigation feedback submitted');
       setIsOpen(false);
-      setCategory('');
-      setSubcategory('');
+      setSelectedCategories([]);
+      setSelectedSubcategories([]);
       setInvestigationNote('');
       setComment('');
       onFeedbackSubmitted?.();
@@ -112,9 +122,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
     }
   };
 
-  const availableSubcategories = category ? subcategoryMap[category] || [] : [];
-
-  
+  const isValid = selectedCategories.length > 0 && selectedSubcategories.length > 0 && investigationNote.trim();
 
   return (
     <>
@@ -124,7 +132,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Investigation Feedback</DialogTitle>
             <DialogDescription>
@@ -133,46 +141,52 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Category */}
+            {/* Categories - multi-select checkboxes */}
             <div className="space-y-2">
-              <Label>Investigation Feedback <span className="text-destructive">*</span></Label>
-              <Select value={category} onValueChange={handleCategoryChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      <div className="flex items-center gap-2">
-                        <cat.icon className="h-4 w-4" />
-                        {cat.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Categories <span className="text-destructive">*</span></Label>
+              <div className="space-y-2 rounded-md border p-3">
+                {categories.map((cat) => (
+                  <label key={cat.value} className="flex items-center gap-2.5 cursor-pointer group">
+                    <Checkbox
+                      checked={selectedCategories.includes(cat.value)}
+                      onCheckedChange={() => toggleCategory(cat.value)}
+                    />
+                    <cat.icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="text-sm">{cat.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            {/* Subcategory - conditional */}
-            {category && availableSubcategories.length > 0 && (
+            {/* Subcategories - multi-select checkboxes, conditional */}
+            {selectedCategories.length > 0 && availableSubcategories.length > 0 && (
               <div className="space-y-2">
-                <Label>Subcategory <span className="text-destructive">*</span></Label>
-                <Select value={subcategory} onValueChange={setSubcategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select subcategory..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSubcategories.map((sub) => (
-                      <SelectItem key={sub.value} value={sub.value}>
-                        {sub.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Subcategories <span className="text-destructive">*</span></Label>
+                <div className="space-y-1.5 rounded-md border p-3 max-h-48 overflow-y-auto">
+                  {selectedCategories.map(catVal => {
+                    const catInfo = categories.find(c => c.value === catVal);
+                    const subs = subcategoryMap[catVal] || [];
+                    if (subs.length === 0) return null;
+                    return (
+                      <div key={catVal} className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider pt-1">{catInfo?.label}</p>
+                        {subs.map(sub => (
+                          <label key={sub.value} className="flex items-center gap-2.5 cursor-pointer pl-2">
+                            <Checkbox
+                              checked={selectedSubcategories.includes(sub.value)}
+                              onCheckedChange={() => toggleSubcategory(sub.value)}
+                            />
+                            <span className="text-sm">{sub.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            {/* Investigation Note - required */}
+            {/* Investigation Note */}
             <div className="space-y-2">
               <Label>Investigation Note <span className="text-destructive">*</span></Label>
               <Textarea
@@ -183,7 +197,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
               />
             </div>
 
-            {/* Comment - optional */}
+            {/* Comment */}
             <div className="space-y-2">
               <Label>Additional Comments <span className="text-muted-foreground text-xs">(optional)</span></Label>
               <Textarea
@@ -196,10 +210,8 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!category || !subcategory || !investigationNote.trim() || submitting}>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={!isValid || submitting}>
               {submitting ? 'Submitting...' : 'Submit Feedback'}
             </Button>
           </DialogFooter>
@@ -239,6 +251,12 @@ const subcategoryLabels: Record<string, string> = {
   ESCALATE_TO_ADMIN: 'Escalate to Admin',
 };
 
+// Subcategory to category color mapping for badge styling
+const subcategoryCategoryMap: Record<string, string> = {};
+Object.entries(subcategoryMap).forEach(([cat, subs]) => {
+  subs.forEach(sub => { subcategoryCategoryMap[sub.value] = cat; });
+});
+
 interface CaseFeedbackListProps {
   caseId: number;
   feedback: Array<{
@@ -250,6 +268,7 @@ interface CaseFeedbackListProps {
     investigator_id: number;
     subcategory?: string | null;
     investigation_note?: string | null;
+    selected_categories?: string | null;
   }>;
   investigatorNames?: Record<number, string>;
 }
@@ -266,32 +285,61 @@ export function CaseFeedbackList({ caseId, feedback, investigatorNames }: CaseFe
   return (
     <div className="space-y-3">
       {feedback.map((fb) => {
-        const cat = categoryConfig[fb.category];
-        const CatIcon = cat?.icon || Shield;
-        const subLabel = fb.subcategory ? subcategoryLabels[fb.subcategory] || fb.subcategory : null;
+        // Parse multiple categories
+        const allCategories = fb.selected_categories
+          ? fb.selected_categories.split(',').filter(Boolean)
+          : [fb.category];
+        
+        // Parse multiple subcategories
+        const allSubcategories = fb.subcategory
+          ? fb.subcategory.split(',').filter(Boolean)
+          : [];
+
+        const primaryCat = categoryConfig[allCategories[0]];
         const invName = investigatorNames?.[fb.investigator_id];
 
+        // Determine border color from first category
+        const borderColor = primaryCat?.color.includes('blue') ? '#3b82f6' :
+          primaryCat?.color.includes('amber') ? '#f59e0b' :
+          primaryCat?.color.includes('purple') ? '#8b5cf6' :
+          primaryCat?.color.includes('red') ? '#ef4444' :
+          primaryCat?.color.includes('green') ? '#22c55e' : '#6366f1';
+
         return (
-          <Card key={fb.feedback_id} className="border-l-4" style={{
-            borderLeftColor: cat?.color.includes('blue') ? '#3b82f6' :
-              cat?.color.includes('amber') ? '#f59e0b' :
-              cat?.color.includes('purple') ? '#8b5cf6' :
-              cat?.color.includes('red') ? '#ef4444' :
-              cat?.color.includes('green') ? '#22c55e' : '#6366f1'
-          }}>
+          <Card key={fb.feedback_id} className="border-l-4" style={{ borderLeftColor: borderColor }}>
             <CardContent className="p-4 space-y-2">
-              {/* Top row: category + subcategory badges */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <CatIcon className="h-4 w-4 text-muted-foreground" />
-                <Badge className={cat?.color || 'bg-muted text-muted-foreground'}>
-                  {cat?.label || fb.category}
-                </Badge>
-                {subLabel && (
-                  <Badge variant="outline" className="text-xs">
-                    {subLabel}
-                  </Badge>
-                )}
+              {/* Category badges */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {allCategories.map(catKey => {
+                  const cat = categoryConfig[catKey];
+                  const CatIcon = cat?.icon || Shield;
+                  return (
+                    <Badge key={catKey} className={cat?.color || 'bg-muted text-muted-foreground'}>
+                      <CatIcon className="h-3 w-3 mr-1" />
+                      {cat?.label || catKey}
+                    </Badge>
+                  );
+                })}
               </div>
+
+              {/* Subcategory badges */}
+              {allSubcategories.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {allSubcategories.map(subKey => {
+                    const parentCat = subcategoryCategoryMap[subKey];
+                    const parentConfig = parentCat ? categoryConfig[parentCat] : null;
+                    // Use a lighter variant of parent category color
+                    const subColor = parentConfig?.color.includes('blue') ? 'border-blue-300 text-blue-600' :
+                      parentConfig?.color.includes('amber') ? 'border-amber-300 text-amber-600' :
+                      parentConfig?.color.includes('purple') ? 'border-purple-300 text-purple-600' : '';
+                    return (
+                      <Badge key={subKey} variant="outline" className={`text-xs ${subColor}`}>
+                        {subcategoryLabels[subKey] || subKey}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Investigator + role */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -310,12 +358,10 @@ export function CaseFeedbackList({ caseId, feedback, investigatorNames }: CaseFe
                 </div>
               )}
 
-              {/* Legacy comment display */}
+              {/* Legacy comment */}
               {fb.comment && !fb.investigation_note && (
                 <p className="text-sm text-muted-foreground">{fb.comment}</p>
               )}
-
-              {/* Additional comment if both exist */}
               {fb.comment && fb.investigation_note && (
                 <p className="text-xs text-muted-foreground italic">{fb.comment}</p>
               )}

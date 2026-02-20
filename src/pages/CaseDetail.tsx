@@ -75,6 +75,7 @@ interface CaseFeedback {
   investigator_id: number;
   subcategory?: string | null;
   investigation_note?: string | null;
+  selected_categories?: string | null;
 }
 
 interface CaseDecision {
