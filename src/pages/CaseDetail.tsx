@@ -889,13 +889,60 @@ export default function CaseDetail() {
               </Card>
             )}
 
-            {/* 2. Decision Section — Investigator & Admin only */}
+            {/* 2. Decision Section */}
             {(isInvestigator || isAdmin) && caseId && (
               <CaseDecisionPanel
                 caseId={parseInt(caseId)}
                 decisions={caseDecisions}
                 onDecisionChanged={fetchCaseData}
               />
+            )}
+
+            {/* Customer Decision View — only shows COMMUNICATED decisions (RLS enforced) */}
+            {isCustomer && caseId && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Gavel className="h-4 w-4" />
+                    Decision
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {caseDecisions.length === 0 ? (
+                    <div className="p-4 bg-muted/50 rounded-lg text-center">
+                      <Clock className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm font-medium">Decision Pending</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You will be notified once a decision has been communicated.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {caseDecisions.map((decision) => (
+                        <div key={decision.decision_id} className="p-3 bg-muted/50 rounded-lg border space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className="bg-green-100 text-green-700">
+                              {decision.category.replace(/_/g, ' ')}
+                            </Badge>
+                            <Badge className="bg-green-100 text-green-700 border-green-200" variant="outline">
+                              Communicated
+                            </Badge>
+                          </div>
+                          {decision.customer_message && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground">Official Message</p>
+                              <p className="text-sm">{decision.customer_message}</p>
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Communicated: {new Date(decision.communicated_at || decision.updated_at).toLocaleString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
             {/* 3. Admin Close Case Controls */}

@@ -138,7 +138,7 @@ export default function MyDecisions() {
     if (casesData && casesData.length > 0) {
       const caseIds = casesData.map((c) => c.case_id);
       
-      // Fetch case decisions (RLS allows FINAL/COMMUNICATED only)
+      // Fetch case decisions (RLS allows COMMUNICATED only for customers)
       const { data: caseDecisionsData } = await supabase
         .from('case_decisions')
         .select('*')
@@ -165,7 +165,7 @@ export default function MyDecisions() {
     if (txnsData && txnsData.length > 0) {
       const txnIds = txnsData.map((t) => t.txn_id);
       
-      // Fetch transaction decisions (RLS allows FINAL/COMMUNICATED only)
+      // Fetch transaction decisions (RLS allows COMMUNICATED only for customers)
       const { data: txnDecisionsData } = await supabase
         .from('transaction_decisions')
         .select('*')

@@ -258,7 +258,7 @@ export default function Dashboard() {
         const caseIds = casesData?.map((c) => c.case_id) || [];
         const txnIds = txnsData?.map((t) => t.txn_id) || [];
 
-        // Count decisions visible to customer (FINAL or COMMUNICATED)
+        // Count decisions visible to customer (COMMUNICATED only — RLS enforced)
         let totalCustomerDecisions = 0;
         if (caseIds.length > 0) {
           const { data: caseDecisions } = await supabase
