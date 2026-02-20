@@ -1223,6 +1223,13 @@ export type Database = {
       is_auditor: { Args: never; Returns: boolean }
       is_customer: { Args: never; Returns: boolean }
       is_investigator: { Args: never; Returns: boolean }
+      recalculate_transaction_risk: {
+        Args: { p_txn_id: number }
+        Returns: {
+          new_risk_level: string
+          new_risk_score: number
+        }[]
+      }
       set_app_context: {
         Args: { p_ip: string; p_user_id: string }
         Returns: undefined
