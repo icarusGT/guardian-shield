@@ -451,24 +451,30 @@ export type Database = {
       }
       customers: {
         Row: {
+          address: string | null
           created_at: string
           customer_id: number
           home_location: string | null
           nid_number: string | null
+          primary_region: string | null
           user_id: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
           customer_id?: never
           home_location?: string | null
           nid_number?: string | null
+          primary_region?: string | null
           user_id: string
         }
         Update: {
+          address?: string | null
           created_at?: string
           customer_id?: never
           home_location?: string | null
           nid_number?: string | null
+          primary_region?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1068,24 +1074,30 @@ export type Database = {
     Views: {
       customers_safe: {
         Row: {
+          address: string | null
           created_at: string | null
           customer_id: number | null
           home_location: string | null
           nid_number: string | null
+          primary_region: string | null
           user_id: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string | null
           customer_id?: number | null
           home_location?: string | null
           nid_number?: never
+          primary_region?: string | null
           user_id?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string | null
           customer_id?: number | null
           home_location?: string | null
           nid_number?: never
+          primary_region?: string | null
           user_id?: string | null
         }
         Relationships: [
