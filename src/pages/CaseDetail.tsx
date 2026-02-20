@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   DollarSign,
   MapPin,
+  RefreshCw,
 } from 'lucide-react';
 
 interface FraudCase {
@@ -146,6 +147,7 @@ export default function CaseDetail() {
   const [ratingInvestigatorName, setRatingInvestigatorName] = useState('');
   const [ratingBadgeNo, setRatingBadgeNo] = useState<string | null>(null);
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -400,6 +402,20 @@ export default function CaseDetail() {
     }
   };
 
+  const handleRecalculateRisk = async (txnId: number) => {
+    setRecalculating(true);
+    try {
+      const { data, error } = await supabase.rpc('recalculate_transaction_risk', { p_txn_id: txnId });
+      if (error) throw error;
+      toast.success(`Risk recalculated: score=${data?.[0]?.new_risk_score}, level=${data?.[0]?.new_risk_level}. Case severity synced.`);
+      await fetchCaseData();
+    } catch (err: any) {
+      toast.error(`Recalculation failed: ${err.message}`);
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   const handleDownload = async (filePath: string) => {
     const { data, error } = await supabase.storage.from('evidence').download(filePath);
 
@@ -487,9 +503,18 @@ export default function CaseDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Severity</p>
-                    <Badge className={severityColors[caseData.severity]}>
-                      {caseData.severity}
-                    </Badge>
+                    {(() => {
+                      // Derive severity from linked transaction (single source of truth)
+                      const txnRisk = linkedTransactions[0]?.risk_level;
+                      const derivedSeverity = txnRisk
+                        ? txnRisk === 'high' ? 'HIGH' : txnRisk === 'suspicious' ? 'MEDIUM' : 'LOW'
+                        : caseData.severity;
+                      return (
+                        <Badge className={severityColors[derivedSeverity]}>
+                          {derivedSeverity}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
@@ -571,6 +596,18 @@ export default function CaseDetail() {
                             ৳{txn.txn_amount.toLocaleString()} BDT
                           </span>
                           <Badge variant="outline">{txn.txn_channel}</Badge>
+                          {(isAdmin || isInvestigator) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={recalculating}
+                              onClick={() => handleRecalculateRisk(txn.txn_id)}
+                              className="ml-2"
+                            >
+                              <RefreshCw className={`h-3 w-3 mr-1 ${recalculating ? 'animate-spin' : ''}`} />
+                              Recalculate Risk
+                            </Button>
+                          )}
                         </div>
                         {txn.risk_score !== undefined && txn.risk_level && (
                           <WhyFlagged
