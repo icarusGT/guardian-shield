@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import TransactionFeedbackForm, { TransactionFeedbackList } from '@/components/feedback/TransactionFeedbackForm';
 import { Activity, Search, AlertTriangle } from 'lucide-react';
+import { displayRiskLabel, getRiskColorClass } from '@/lib/riskLabels';
 
 interface Transaction {
   txn_id: number;
@@ -49,14 +50,7 @@ interface TransactionFeedback {
   investigator_id: number;
 }
 
-const riskColors: Record<string, string> = {
-  normal: 'bg-green-100 text-green-700',
-  suspicious: 'bg-amber-100 text-amber-700',
-  high: 'bg-red-100 text-red-700',
-  LOW: 'bg-green-100 text-green-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  HIGH: 'bg-red-100 text-red-700',
-};
+// riskColors removed — using getRiskColorClass from riskLabels utility
 
 const channelColors: Record<string, string> = {
   BKASH: 'bg-pink-100 text-pink-700',
@@ -231,7 +225,7 @@ export default function Transactions() {
           <Card className="glass-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                High Risk
+                Critical
               </CardTitle>
               <AlertTriangle className="h-4 w-4 text-red-500" />
             </CardHeader>
@@ -340,8 +334,8 @@ export default function Transactions() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex flex-col gap-1">
-                              <Badge className={riskColors[t.risk_level] || 'bg-green-100 text-green-700'}>
-                                {t.risk_level.toUpperCase()} ({t.risk_score})
+                              <Badge className={getRiskColorClass(t.risk_level)}>
+                                {displayRiskLabel(t.risk_level)} ({t.risk_score})
                               </Badge>
                               {suspInfo?.reasons && (
                                 <span className="text-xs text-muted-foreground">

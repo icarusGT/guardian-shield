@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { displayRiskLabel, riskDisplayColors } from '@/lib/riskLabels';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -49,11 +50,7 @@ const channelColors: Record<string, string> = {
   OTHER: 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
-const riskColors: Record<string, string> = {
-  LOW: 'bg-green-100 text-green-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  HIGH: 'bg-red-100 text-red-700',
-};
+const riskColors: Record<string, string> = riskDisplayColors;
 
 export default function FraudHotspotsAnalytics() {
   const [channelStats, setChannelStats] = useState<ChannelStats[]>([]);
@@ -134,9 +131,9 @@ export default function FraudHotspotsAnalytics() {
         .map(([recipient, stats]) => {
           const highCount = stats.riskLevels.filter((r) => r === 'high').length;
           const suspCount = stats.riskLevels.filter((r) => r === 'suspicious').length;
-          let dominantRisk = 'LOW';
-          if (highCount > 0) dominantRisk = 'HIGH';
-          else if (suspCount > 0) dominantRisk = 'MEDIUM';
+          let dominantRisk = 'SAFE';
+          if (highCount > 0) dominantRisk = 'CRITICAL';
+          else if (suspCount > 0) dominantRisk = 'SUSPICIOUS';
 
           return {
             recipient,
@@ -257,7 +254,7 @@ export default function FraudHotspotsAnalytics() {
                 {stat.highRiskCount > 0 && (
                   <div className="flex items-center gap-1">
                     <Badge className="bg-red-100 text-red-700 text-xs">
-                      {stat.highRiskCount} HIGH risk
+                      {stat.highRiskCount} CRITICAL risk
                     </Badge>
                   </div>
                 )}

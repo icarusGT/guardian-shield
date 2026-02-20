@@ -41,7 +41,7 @@ export default function HighRiskAlerts() {
           setAlerts((prev) => [newAlert, ...prev].slice(0, 5)); // Keep last 5
 
           toast({
-            title: '🚨 HIGH Risk Transaction Detected!',
+            title: '🚨 CRITICAL Risk Transaction Detected!',
             description: `Transaction #${newAlert.txn_id} flagged with score ${newAlert.risk_score}`,
             variant: 'destructive',
           });
@@ -70,7 +70,7 @@ export default function HighRiskAlerts() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">HIGH Risk Alert</p>
+              <p className="font-semibold text-sm">CRITICAL Risk Alert</p>
               <p className="text-xs opacity-90">
                 TXN #{alert.txn_id} • Score: {alert.risk_score}
               </p>

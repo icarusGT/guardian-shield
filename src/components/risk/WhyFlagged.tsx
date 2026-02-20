@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, AlertTriangle, DollarSign, Zap, ShieldBan, MapPin } from 'lucide-react';
+import { displayRiskLabel, getRiskColorClass } from '@/lib/riskLabels';
 
 interface Props {
   riskScore: number;
@@ -11,11 +12,7 @@ interface Props {
   reasons?: string | null;
 }
 
-const riskColors: Record<string, string> = {
-  high: 'bg-red-100 text-red-700',
-  suspicious: 'bg-amber-100 text-amber-700',
-  low: 'bg-green-100 text-green-700',
-};
+// Use centralized risk label colors
 
 export default function WhyFlagged({ riskScore, riskLevel, txnAmount, recipientAccount, txnLocation, reasons }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -49,14 +46,14 @@ export default function WhyFlagged({ riskScore, riskLevel, txnAmount, recipientA
   ];
 
   const firedRules = rules.filter((r) => r.fired);
-  const level = riskLevel.toLowerCase();
+  const riskLabel = displayRiskLabel(riskLevel);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Badge className={riskColors[level] || riskColors.normal}>
+        <Badge className={getRiskColorClass(riskLevel)}>
           <AlertTriangle className="h-3 w-3 mr-1" />
-          {riskLevel.toUpperCase()} Risk
+          {riskLabel} Risk
         </Badge>
         <span className="text-sm text-muted-foreground">Score: {riskScore}</span>
         {firedRules.length > 0 && (
