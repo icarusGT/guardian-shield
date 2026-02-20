@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import CaseFeedbackForm, { CaseFeedbackList } from '@/components/feedback/CaseFeedbackForm';
-import CaseDecisionForm, { CaseDecisionList } from '@/components/decisions/CaseDecisionForm';
+import CaseDecisionPanel from '@/components/decisions/CaseDecisionPanel';
+import AdminCloseCaseButton from '@/components/decisions/AdminCloseCaseButton';
 import CaseChat from '@/components/chat/CaseChat';
 import CaseRatingModal from '@/components/ratings/CaseRatingModal';
 import InvestigatorRatingModal from '@/components/ratings/InvestigatorRatingModal';
@@ -748,14 +749,14 @@ export default function CaseDetail() {
               </Card>
             )}
 
-            {/* Investigator Feedback Section */}
+            {/* 1. Investigation Feedback — Investigator & Admin only */}
             {(isInvestigator || isAdmin) && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <MessageSquare className="h-4 w-4" />
-                      Feedback & Approval
+                      Investigation Feedback
                     </CardTitle>
                     {isInvestigator && myInvestigatorId && caseId && (
                       <CaseFeedbackForm
@@ -765,6 +766,7 @@ export default function CaseDetail() {
                       />
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground">Optional internal notes — not the official decision.</p>
                 </CardHeader>
                 <CardContent>
                   <CaseFeedbackList caseId={parseInt(caseId || '0')} feedback={caseFeedback} />
@@ -772,23 +774,31 @@ export default function CaseDetail() {
               </Card>
             )}
 
-            {/* Admin Final Decision Section */}
-            {isAdmin && caseId && (
-              <Card className="border-primary/20">
+            {/* 2. Decision Section — Investigator & Admin only */}
+            {(isInvestigator || isAdmin) && caseId && (
+              <CaseDecisionPanel
+                caseId={parseInt(caseId)}
+                decisions={caseDecisions}
+                onDecisionChanged={fetchCaseData}
+              />
+            )}
+
+            {/* 3. Admin Close Case Controls */}
+            {isAdmin && caseId && caseData && (
+              <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Gavel className="h-4 w-4" />
-                      Admin Decision
-                    </CardTitle>
-                    <CaseDecisionForm
-                      caseId={parseInt(caseId)}
-                      onDecisionSubmitted={fetchCaseData}
-                    />
-                  </div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Gavel className="h-4 w-4" />
+                    Admin Controls
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CaseDecisionList decisions={caseDecisions} showInternalNotes={true} />
+                  <AdminCloseCaseButton
+                    caseId={parseInt(caseId)}
+                    currentStatus={caseData.status}
+                    hasFinalizedDecision={caseDecisions.some(d => d.status === 'FINAL' || d.status === 'COMMUNICATED')}
+                    onStatusChanged={fetchCaseData}
+                  />
                 </CardContent>
               </Card>
             )}
