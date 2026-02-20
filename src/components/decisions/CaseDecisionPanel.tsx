@@ -43,6 +43,7 @@ import {
   CheckCircle2,
   Megaphone,
   AlertTriangle,
+  ThumbsUp,
 } from 'lucide-react';
 
 interface CaseDecision {
@@ -55,6 +56,8 @@ interface CaseDecision {
   updated_at: string;
   admin_user_id: string;
   communicated_at: string | null;
+  admin_approved: boolean;
+  approved_at: string | null;
 }
 
 interface CaseDecisionPanelProps {
@@ -90,6 +93,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   const [submitting, setSubmitting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [communicating, setCommunicating] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [confirmCommunicateDecision, setConfirmCommunicateDecision] = useState<CaseDecision | null>(null);
 
   const hasFinalizedDecision = decisions.some(d => d.status === 'FINAL' || d.status === 'COMMUNICATED');
@@ -216,6 +220,32 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
     }
   };
 
+  const handleApprove = async (decision: CaseDecision) => {
+    if (decision.status !== 'COMMUNICATED') {
+      toast.error('Only communicated decisions can be approved');
+      return;
+    }
+    setApproving(true);
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('case_decisions')
+        .update({
+          admin_approved: true,
+          approved_at: now,
+          updated_at: now,
+        } as any)
+        .eq('decision_id', decision.decision_id);
+      if (error) throw error;
+      toast.success('Decision approved');
+      onDecisionChanged?.();
+    } catch (error: any) {
+      toast.error(`Failed to approve: ${error.message}`);
+    } finally {
+      setApproving(false);
+    }
+  };
+
   const isCaseOpen = caseStatus === 'OPEN';
   const canCreateDecision = isInvestigator && !hasFinalizedDecision && !isCaseOpen;
   const canEditDecision = (d: CaseDecision) =>
@@ -224,6 +254,8 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
     isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id && !isCaseOpen;
   const canCommunicate = (d: CaseDecision) =>
     isAdmin && d.status === 'FINAL';
+  const canApprove = (d: CaseDecision) =>
+    isAdmin && d.status === 'COMMUNICATED' && !d.admin_approved;
 
   // Stable JSX for form fields to avoid re-mounting on keystroke
   const decisionFormFields = (
@@ -396,13 +428,41 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                   {/* Communicated success badge */}
                   {decision.status === 'COMMUNICATED' && (
                     <div className="flex flex-col gap-1 pt-1 animate-fade-in">
-                      <Badge className="bg-green-100 text-green-700 border-green-200 gap-1 w-fit">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Decision Communicated
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className="bg-green-100 text-green-700 border-green-200 gap-1 w-fit">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Decision Communicated
+                        </Badge>
+                        {decision.admin_approved && (
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-200 gap-1 w-fit">
+                            <ThumbsUp className="h-3 w-3" />
+                            Approved
+                          </Badge>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         Communicated at: {new Date(decision.communicated_at || decision.updated_at).toLocaleString()}
                       </span>
+                      {decision.admin_approved && decision.approved_at && (
+                        <span className="text-xs text-muted-foreground">
+                          Approved at: {new Date(decision.approved_at).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Admin action: Approve Decision (only on COMMUNICATED + not yet approved) */}
+                  {canApprove(decision) && (
+                    <div className="flex gap-2 pt-1 animate-fade-in">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(decision)}
+                        disabled={approving}
+                        className="gap-1 bg-blue-600 hover:bg-blue-700 text-white border-0"
+                      >
+                        <ThumbsUp className="h-3 w-3" />
+                        {approving ? 'Approving...' : 'Approve Decision'}
+                      </Button>
                     </div>
                   )}
 

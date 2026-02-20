@@ -34,6 +34,7 @@ import {
   RefreshCw,
   Eye,
   ArrowUpDown,
+  ThumbsUp,
 } from 'lucide-react';
 
 interface CaseDecision {
@@ -46,6 +47,8 @@ interface CaseDecision {
   created_at: string;
   updated_at: string;
   communicated_at: string | null;
+  admin_approved: boolean;
+  approved_at: string | null;
   case_title?: string;
 }
 
@@ -183,10 +186,10 @@ export default function AdminDecisions() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Gavel className="h-8 w-8" />
-              Admin Decisions
+              Admin Approvals
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage all decisions across cases
+              Manage all decisions and approvals across cases
             </p>
           </div>
           <Button onClick={fetchDecisions} variant="outline">
@@ -367,9 +370,17 @@ export default function AdminDecisions() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusColors[decision.status]}>
-                          {decision.status}
-                        </Badge>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge className={statusColors[decision.status]}>
+                            {decision.status}
+                          </Badge>
+                          {decision.admin_approved && (
+                            <Badge className="bg-blue-100 text-blue-700 gap-1">
+                              <ThumbsUp className="h-3 w-3" />
+                              Approved
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(decision.created_at).toLocaleDateString()}

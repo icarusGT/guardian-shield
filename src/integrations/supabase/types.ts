@@ -168,7 +168,9 @@ export type Database = {
       }
       case_decisions: {
         Row: {
+          admin_approved: boolean
           admin_user_id: string
+          approved_at: string | null
           case_id: number
           category: Database["public"]["Enums"]["decision_category"]
           communicated_at: string | null
@@ -180,7 +182,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_approved?: boolean
           admin_user_id: string
+          approved_at?: string | null
           case_id: number
           category: Database["public"]["Enums"]["decision_category"]
           communicated_at?: string | null
@@ -192,7 +196,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_approved?: boolean
           admin_user_id?: string
+          approved_at?: string | null
           case_id?: number
           category?: Database["public"]["Enums"]["decision_category"]
           communicated_at?: string | null
