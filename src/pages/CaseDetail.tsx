@@ -775,7 +775,7 @@ export default function CaseDetail() {
             })()}
 
             {/* Investigator Status Toggle */}
-            {isInvestigator && myInvestigatorId && caseData.status !== 'CLOSED' && (
+            {isInvestigator && myInvestigatorId && caseData.status === 'OPEN' && (
               <Card className="glass-card border-primary/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -790,47 +790,24 @@ export default function CaseDetail() {
                         {caseData.status.replace('_', ' ')}
                       </Badge>
                     </div>
-                    {caseData.status === 'OPEN' && (
-                      <Button
-                        size="sm"
-                        className="w-full gap-2"
-                        onClick={async () => {
-                          const { data, error } = await supabase.rpc('update_case_status', {
-                            p_case_id: caseData.case_id,
-                            p_new_status: 'UNDER_INVESTIGATION' as any,
-                            p_comment: 'Started investigation',
-                          });
-                          if (error) { toast.error(error.message); return; }
-                          const result = data?.[0];
-                          if (result && !result.success) { toast.error(result.message); return; }
-                          toast.success('Status changed to Under Investigation');
-                          fetchCaseData();
-                        }}
-                      >
-                        Start Investigation
-                      </Button>
-                    )}
-                    {caseData.status === 'UNDER_INVESTIGATION' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={async () => {
-                          const { data, error } = await supabase.rpc('update_case_status', {
-                            p_case_id: caseData.case_id,
-                            p_new_status: 'OPEN' as any,
-                            p_comment: 'Returned to open',
-                          });
-                          if (error) { toast.error(error.message); return; }
-                          const result = data?.[0];
-                          if (result && !result.success) { toast.error(result.message); return; }
-                          toast.success('Status changed to Open');
-                          fetchCaseData();
-                        }}
-                      >
-                        Return to Open
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={async () => {
+                        const { data, error } = await supabase.rpc('update_case_status', {
+                          p_case_id: caseData.case_id,
+                          p_new_status: 'UNDER_INVESTIGATION' as any,
+                          p_comment: 'Started investigation',
+                        });
+                        if (error) { toast.error(error.message); return; }
+                        const result = data?.[0];
+                        if (result && !result.success) { toast.error(result.message); return; }
+                        toast.success('Status changed to Under Investigation');
+                        fetchCaseData();
+                      }}
+                    >
+                      Start Investigation
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
