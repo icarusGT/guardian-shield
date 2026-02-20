@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -32,7 +31,7 @@ import {
   Edit,
   Lock,
   CheckCircle2,
-  AlertTriangle,
+  Megaphone,
 } from 'lucide-react';
 
 interface CaseDecision {
@@ -53,14 +52,14 @@ interface CaseDecisionPanelProps {
 
 const outcomeOptions = [
   { value: 'FRAUD_CONFIRMED', label: 'Fraud Confirmed', icon: ShieldX, color: 'bg-red-100 text-red-700' },
-  { value: 'CLEARED', label: 'False Alarm', icon: ShieldCheck, color: 'bg-green-100 text-green-700' },
+  { value: 'CLEARED', label: 'Not Fraud / False Alarm', icon: ShieldCheck, color: 'bg-green-100 text-green-700' },
   { value: 'INSUFFICIENT_EVIDENCE', label: 'Insufficient Evidence', icon: FileQuestion, color: 'bg-slate-100 text-slate-700' },
 ];
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   DRAFT: { label: 'Draft', color: 'bg-amber-100 text-amber-700' },
-  FINAL: { label: 'Finalized', color: 'bg-green-100 text-green-700' },
-  COMMUNICATED: { label: 'Communicated', color: 'bg-blue-100 text-blue-700' },
+  FINAL: { label: 'Finalized', color: 'bg-blue-100 text-blue-700' },
+  COMMUNICATED: { label: 'Communicated', color: 'bg-green-100 text-green-700' },
 };
 
 export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged }: CaseDecisionPanelProps) {
@@ -76,6 +75,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   const [actionTaken, setActionTaken] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [communicating, setCommunicating] = useState(false);
 
   const hasFinalizedDecision = decisions.some(d => d.status === 'FINAL' || d.status === 'COMMUNICATED');
   const hasDraftDecision = decisions.some(d => d.status === 'DRAFT');
@@ -102,7 +102,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
         internal_notes: actionTaken.trim() || null,
       });
       if (error) throw error;
-      toast.success('Decision draft created');
+      toast.success('Decision draft saved');
       setIsCreateOpen(false);
       resetForm();
       onDecisionChanged?.();
@@ -171,12 +171,32 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
     }
   };
 
+  const handleCommunicate = async (decision: CaseDecision) => {
+    setCommunicating(true);
+    try {
+      const { error } = await supabase
+        .from('case_decisions')
+        .update({ status: 'COMMUNICATED' as any })
+        .eq('decision_id', decision.decision_id);
+      if (error) throw error;
+      toast.success('Decision marked as communicated');
+      onDecisionChanged?.();
+    } catch (error: any) {
+      toast.error(`Failed to communicate: ${error.message}`);
+    } finally {
+      setCommunicating(false);
+    }
+  };
+
   const canCreateDecision = isInvestigator && !hasFinalizedDecision;
   const canEditDecision = (d: CaseDecision) =>
     isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id;
   const canFinalizeDecision = (d: CaseDecision) =>
     isInvestigator && d.status === 'DRAFT' && d.admin_user_id === user?.id;
+  const canCommunicate = (d: CaseDecision) =>
+    isAdmin && d.status === 'FINAL';
 
+  // Stable JSX for form fields to avoid re-mounting on keystroke
   const decisionFormFields = (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
@@ -246,12 +266,12 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
             {decisions.map((decision) => {
               const outcome = outcomeOptions.find(o => o.value === decision.category);
               const stat = statusLabels[decision.status] || { label: decision.status, color: '' };
-              const isFinalized = decision.status === 'FINAL' || decision.status === 'COMMUNICATED';
+              const isLocked = decision.status === 'FINAL' || decision.status === 'COMMUNICATED';
 
               return (
                 <div key={decision.decision_id} className="p-3 bg-muted/50 rounded-lg border space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {isFinalized ? (
+                    {isLocked ? (
                       <Lock className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       outcome && <outcome.icon className="h-4 w-4" />
@@ -281,7 +301,8 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                     </div>
                   )}
 
-                  {!isFinalized && (isInvestigator || isAdmin) && (
+                  {/* Investigator actions: Edit + Finalize (only on DRAFT) */}
+                  {decision.status === 'DRAFT' && isInvestigator && (
                     <div className="flex gap-2 pt-1">
                       {canEditDecision(decision) && (
                         <Button
@@ -291,27 +312,45 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
                           className="gap-1"
                         >
                           <Edit className="h-3 w-3" />
-                          Edit
+                          Edit Draft
                         </Button>
                       )}
                       {canFinalizeDecision(decision) && (
                         <Button
                           size="sm"
-                          variant="default"
                           onClick={() => handleFinalize(decision)}
                           disabled={finalizing}
-                          className="gap-1"
+                          className="gap-1 btn-glow-blue"
                         >
                           <CheckCircle2 className="h-3 w-3" />
-                          {finalizing ? 'Finalizing...' : 'Finalize'}
+                          {finalizing ? 'Finalizing...' : 'Finalize Decision'}
                         </Button>
                       )}
                     </div>
                   )}
 
-                  {isFinalized && (
+                  {/* Admin action: Mark as Communicated (only on FINAL) */}
+                  {canCommunicate(decision) && (
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        onClick={() => handleCommunicate(decision)}
+                        disabled={communicating}
+                        className="gap-1 btn-glow-green"
+                      >
+                        <Megaphone className="h-3 w-3" />
+                        {communicating ? 'Updating...' : 'Mark as Communicated'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Status message */}
+                  {isLocked && (
                     <p className="text-xs text-green-600 flex items-center gap-1">
-                      <Lock className="h-3 w-3" /> Read-only — Decision finalized
+                      <Lock className="h-3 w-3" />
+                      {decision.status === 'COMMUNICATED'
+                        ? 'Decision communicated to customer'
+                        : 'Read-only — Decision finalized'}
                     </p>
                   )}
                 </div>
@@ -334,7 +373,7 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Gavel className="h-5 w-5" />
-              Create Decision Draft
+              Save Decision Draft
             </DialogTitle>
             <DialogDescription>
               Create a decision for Case #{caseId}. It will start as a draft and must be finalized before the case can be closed.
@@ -343,8 +382,8 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
           {decisionFormFields}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!category || !reason.trim() || submitting} className="gap-2">
-              {submitting ? 'Creating...' : <><Send className="h-4 w-4" /> Create Draft</>}
+            <Button onClick={handleCreate} disabled={!category || !reason.trim() || submitting} className="gap-2 btn-glow-primary">
+              {submitting ? 'Saving...' : <><Send className="h-4 w-4" /> Save Draft</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -365,8 +404,8 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
           {decisionFormFields}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={!category || !reason.trim() || submitting} className="gap-2">
-              {submitting ? 'Saving...' : <><Send className="h-4 w-4" /> Save Changes</>}
+            <Button onClick={handleUpdate} disabled={!category || !reason.trim() || submitting} className="gap-2 btn-glow-primary">
+              {submitting ? 'Saving...' : <><Send className="h-4 w-4" /> Save Draft</>}
             </Button>
           </DialogFooter>
         </DialogContent>
