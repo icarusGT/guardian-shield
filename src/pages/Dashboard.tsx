@@ -170,7 +170,7 @@ export default function Dashboard() {
         .from('fraud_cases')
         .select('case_id, title, category, severity, status, created_at')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(5);
       if (casesData) setCases(casesData as FraudCase[]);
     } else if (isInvestigator) {
       // Assigned cases for investigator
@@ -301,7 +301,7 @@ export default function Dashboard() {
     );
   }
 
-  const displayCases = isAdmin || isAuditor ? cases : myCases;
+  const displayCases = (isAdmin || isAuditor ? cases : myCases).slice(0, 5);
 
   return (
     <AppLayout>
@@ -812,9 +812,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                <CardTitle>
-                  {isAdmin || isAuditor ? 'Recent Cases' : 'My Cases'}
-                </CardTitle>
+                <CardTitle>Recent Cases</CardTitle>
               </div>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/cases">
