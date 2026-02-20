@@ -246,8 +246,7 @@ export default function Dashboard() {
           .from('fraud_cases')
           .select('case_id, title, category, severity, status, created_at')
           .eq('customer_id', customerData.customer_id)
-          .order('created_at', { ascending: false })
-          .limit(10);
+          .order('created_at', { ascending: false });
         if (casesData) setMyCases(casesData as FraudCase[]);
 
         // Fetch customer's transactions to check for decisions
