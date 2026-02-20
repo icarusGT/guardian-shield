@@ -104,7 +104,7 @@ export default function MyProfile() {
 
       if (custData) {
         setCustomerId(custData.customer_id);
-        setPrimaryRegion(custData.primary_region || '');
+        setPrimaryRegion(custData.primary_region || 'none');
         setAddress(custData.address || '');
       }
     } catch (err) {
@@ -117,7 +117,6 @@ export default function MyProfile() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!fullName.trim()) newErrors.fullName = 'Full Name is required';
-    if (!primaryRegion) newErrors.primaryRegion = 'Primary Region is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -140,7 +139,7 @@ export default function MyProfile() {
       const { error: custError } = await supabase
         .from('customers')
         .update({
-          primary_region: primaryRegion,
+          primary_region: primaryRegion === 'none' ? null : primaryRegion || null,
           address: address.trim() || null,
         })
         .eq('user_id', user.id);
@@ -308,10 +307,10 @@ export default function MyProfile() {
                 {/* Primary Region */}
                 <div className="space-y-2">
                   <Label htmlFor="primaryRegion">
-                    Primary Region / City <span className="text-destructive">*</span>
+                    Primary Region / City
                   </Label>
                   <Select value={primaryRegion} onValueChange={setPrimaryRegion}>
-                    <SelectTrigger id="primaryRegion" className={errors.primaryRegion ? 'border-destructive' : ''}>
+                    <SelectTrigger id="primaryRegion">
                       <SelectValue placeholder="Select your primary region" />
                     </SelectTrigger>
                     <SelectContent>
@@ -323,6 +322,9 @@ export default function MyProfile() {
                           className="h-8"
                         />
                       </div>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">None</span>
+                      </SelectItem>
                       {filteredRegions.map((region) => (
                         <SelectItem key={region} value={region}>
                           <div className="flex items-center gap-2">
@@ -338,10 +340,10 @@ export default function MyProfile() {
                       )}
                     </SelectContent>
                   </Select>
-                  {errors.primaryRegion && (
-                    <p className="text-sm text-destructive flex items-center gap-1">
+                  {primaryRegion === 'none' && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      {errors.primaryRegion}
+                      Without a region, you won't be able to submit fraud reports.
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
