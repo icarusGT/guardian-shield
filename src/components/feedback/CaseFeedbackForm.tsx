@@ -63,6 +63,11 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
     return selectedCategories.flatMap(cat => subcategoryMap[cat] || []);
   }, [selectedCategories]);
 
+  // Recommendation subcategory values for single-select enforcement
+  const recommendationSubValues = useMemo(() => 
+    (subcategoryMap['RECOMMENDATION'] || []).map(s => s.value), []
+  );
+
   const toggleCategory = (val: string) => {
     setSelectedCategories(prev => {
       const next = prev.includes(val) ? prev.filter(c => c !== val) : [...prev, val];
@@ -74,14 +79,20 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
   };
 
   const toggleSubcategory = (val: string) => {
-    setSelectedSubcategories(prev =>
-      prev.includes(val) ? prev.filter(s => s !== val) : [...prev, val]
-    );
+    const isRecommendationSub = recommendationSubValues.includes(val);
+    setSelectedSubcategories(prev => {
+      if (prev.includes(val)) return prev.filter(s => s !== val);
+      if (isRecommendationSub) {
+        // Remove any other recommendation subcategory (only 1 allowed)
+        return [...prev.filter(s => !recommendationSubValues.includes(s)), val];
+      }
+      return [...prev, val];
+    });
   };
 
   const handleSubmit = async () => {
-    if (selectedCategories.length === 0) {
-      toast.error('Please select at least one category');
+    if (selectedCategories.length < 3) {
+      toast.error('All 3 categories must be selected');
       return;
     }
     if (selectedSubcategories.length === 0) {
@@ -122,7 +133,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
     }
   };
 
-  const isValid = selectedCategories.length > 0 && selectedSubcategories.length > 0 && investigationNote.trim();
+  const isValid = selectedCategories.length === 3 && selectedSubcategories.length > 0 && investigationNote.trim();
 
   return (
     <>
@@ -143,7 +154,7 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
           <div className="space-y-4 py-4">
             {/* Categories - multi-select checkboxes */}
             <div className="space-y-2">
-              <Label>Categories <span className="text-destructive">*</span></Label>
+              <Label>Categories <span className="text-destructive">*</span> <span className="text-xs text-muted-foreground">(all 3 required)</span></Label>
               <div className="space-y-2 rounded-md border p-3">
                 {categories.map((cat) => (
                   <label key={cat.value} className="flex items-center gap-2.5 cursor-pointer group">
@@ -169,7 +180,10 @@ export default function CaseFeedbackForm({ caseId, investigatorId, onFeedbackSub
                     if (subs.length === 0) return null;
                     return (
                       <div key={catVal} className="space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider pt-1">{catInfo?.label}</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider pt-1">
+                          {catInfo?.label}
+                          {catVal === 'RECOMMENDATION' && <span className="ml-1 text-[10px] normal-case text-orange-500">(select only one)</span>}
+                        </p>
                         {subs.map(sub => (
                           <label key={sub.value} className="flex items-center gap-2.5 cursor-pointer pl-2">
                             <Checkbox
