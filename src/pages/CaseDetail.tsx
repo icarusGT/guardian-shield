@@ -249,7 +249,7 @@ export default function CaseDetail() {
       setCaseDecisions(decisionsResult as unknown as CaseDecision[]);
     }
 
-    // Fetch linked transactions with suspicious info
+    // Fetch linked transactions with risk info
     const { data: caseTransactions } = await supabase
       .from('case_transactions')
       .select('txn_id')
@@ -258,16 +258,16 @@ export default function CaseDetail() {
     if (caseTransactions && caseTransactions.length > 0) {
       const txnIds = caseTransactions.map((ct) => ct.txn_id);
       
-      // Fetch transactions
+      // Fetch transactions (risk_score and risk_level are on the transaction itself)
       const { data: txnData } = await supabase
         .from('transactions')
         .select('*')
         .in('txn_id', txnIds);
 
-      // Fetch suspicious transaction info
+      // Fetch suspicious transaction reasons (for "Why Flagged?" details)
       const { data: suspData } = await supabase
         .from('suspicious_transactions')
-        .select('txn_id, risk_score, risk_level, reasons')
+        .select('txn_id, reasons')
         .in('txn_id', txnIds);
 
       if (txnData) {
@@ -280,9 +280,9 @@ export default function CaseDetail() {
             txn_location: txn.txn_location,
             recipient_account: txn.recipient_account,
             occurred_at: txn.occurred_at,
-            risk_score: suspInfo?.risk_score,
-            risk_level: suspInfo?.risk_level,
-            reasons: suspInfo?.reasons,
+            risk_score: txn.risk_score,
+            risk_level: txn.risk_level,
+            reasons: suspInfo?.reasons || null,
           };
         });
         setLinkedTransactions(txnsWithRisk);
