@@ -274,10 +274,22 @@ export default function CaseDecisionPanel({ caseId, decisions, onDecisionChanged
   return (
     <Card className="border-primary/20">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Gavel className="h-4 w-4" />
             Decision
+            {decisions.length > 0 && (() => {
+              const topDecision = decisions.reduce((best, d) => {
+                const p: Record<string, number> = { DRAFT: 1, FINAL: 2, COMMUNICATED: 3 };
+                return (p[d.status] || 0) > (p[best.status] || 0) ? d : best;
+              }, decisions[0]);
+              const stat = statusLabels[topDecision.status];
+              return stat ? (
+                <Badge className={stat.color} variant="outline">
+                  {stat.label}
+                </Badge>
+              ) : null;
+            })()}
           </CardTitle>
           {canCreateDecision && !hasDraftDecision && (
             <Button
