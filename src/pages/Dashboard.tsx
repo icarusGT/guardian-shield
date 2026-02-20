@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { useCaseStatusRealtime } from '@/hooks/useCaseStatusRealtime';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -109,6 +110,9 @@ export default function Dashboard() {
     communicatedCount: 0,
   });
   const [customerDecisionCount, setCustomerDecisionCount] = useState(0);
+
+  // Real-time: refetch dashboard when any case status changes
+  useCaseStatusRealtime(() => fetchData());
 
   useEffect(() => {
     if (!loading && !user) {

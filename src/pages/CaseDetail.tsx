@@ -20,6 +20,7 @@ import WhyFlagged from '@/components/risk/WhyFlagged';
 import RiskBreakdownCard from '@/components/risk/RiskBreakdownCard';
 import BlacklistRecommendationBanner from '@/components/blacklist/BlacklistRecommendationBanner';
 import { useBlacklistRecommendation } from '@/hooks/useBlacklistRecommendations';
+import { useCaseStatusRealtime } from '@/hooks/useCaseStatusRealtime';
 import {
   ArrowLeft,
   FileText,
@@ -164,6 +165,8 @@ export default function CaseDetail() {
   const firstRecipient = linkedTransactions[0]?.recipient_account;
   const { recommendation: blRec, refresh: refreshBlRec } = useBlacklistRecommendation(firstRecipient);
 
+  // Real-time: refetch when this case's status changes
+  useCaseStatusRealtime(() => fetchCaseData(), caseId ? parseInt(caseId) : undefined);
 
   useEffect(() => {
     if (!loading && !user) {

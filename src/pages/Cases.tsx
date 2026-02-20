@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useCaseStatusRealtime } from '@/hooks/useCaseStatusRealtime';
 import { FileText, Plus, Search, Eye } from 'lucide-react';
 
 interface FraudCase {
@@ -61,6 +62,9 @@ export default function Cases() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [decisionFilter, setDecisionFilter] = useState<string>(searchParams.get('decision') || 'all');
+
+  // Real-time: refetch when any case status changes
+  useCaseStatusRealtime(() => fetchCases());
 
   useEffect(() => {
     if (!loading && !user) {
