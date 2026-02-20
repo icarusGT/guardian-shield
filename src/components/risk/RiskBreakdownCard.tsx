@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { displayRiskLabel } from '@/lib/riskLabels';
 
 interface RiskReasons {
   high_amount: number;
@@ -26,9 +27,10 @@ export default function RiskBreakdownCard({ riskReasons, riskLevel }: Props) {
   // Total is ALWAYS computed from risk_reasons — single source of truth
   const totalScore = reasons.high_amount + reasons.rapid_reports + reasons.blacklisted_recipient + reasons.location_mismatch;
 
+  const levelLabel = displayRiskLabel(riskLevel);
   const levelColor =
-    riskLevel === 'high' ? 'text-destructive' :
-    riskLevel === 'suspicious' ? 'text-amber-600' :
+    levelLabel === 'CRITICAL' ? 'text-destructive' :
+    levelLabel === 'SUSPICIOUS' ? 'text-amber-600' :
     'text-green-600';
 
   return (
@@ -42,7 +44,7 @@ export default function RiskBreakdownCard({ riskReasons, riskLevel }: Props) {
       <CardContent className="space-y-3">
         <div className="text-center pb-2 border-b">
           <p className={`text-3xl font-bold ${levelColor}`}>{totalScore}</p>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">{riskLevel} risk</p>
+           <p className="text-xs text-muted-foreground uppercase tracking-wider">{levelLabel} risk</p>
         </div>
         <div className="space-y-2">
           {(Object.keys(RULE_LABELS) as (keyof RiskReasons)[]).map((key) => {

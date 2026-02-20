@@ -1,6 +1,7 @@
 // Last updated: 25th January 2026
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { displayRiskLabel } from '@/lib/riskLabels';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useCaseStatusRealtime } from '@/hooks/useCaseStatusRealtime';
@@ -85,9 +86,9 @@ const statusColors: Record<string, string> = {
 };
 
 const riskColors: Record<string, string> = {
-  LOW: 'bg-green-100 text-green-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  HIGH: 'bg-red-100 text-red-700',
+  SAFE: 'bg-green-100 text-green-700',
+  SUSPICIOUS: 'bg-amber-100 text-amber-700',
+  CRITICAL: 'bg-red-100 text-red-700',
 };
 
 export default function Dashboard() {
@@ -156,7 +157,7 @@ export default function Dashboard() {
           suspicious_id: i,
           txn_id: t.txn_id,
           risk_score: t.risk_score,
-          risk_level: t.risk_level.toUpperCase(),
+          risk_level: displayRiskLabel(t.risk_level),
           flagged_at: t.occurred_at,
         })));
       }
