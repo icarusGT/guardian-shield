@@ -146,15 +146,9 @@ export default function Dashboard() {
 
     // Fetch decision stats for admin
     if (isAdmin) {
-      const [caseDecRes, txnDecRes] = await Promise.all([
-        supabase.from('case_decisions').select('status'),
-        supabase.from('transaction_decisions').select('status'),
-      ]);
+      const { data: caseDecData } = await supabase.from('case_decisions').select('status');
 
-      const allDecisions = [
-        ...(caseDecRes.data || []),
-        ...(txnDecRes.data || []),
-      ];
+      const allDecisions = caseDecData || [];
 
       setDecisionStats({
         draftCount: allDecisions.filter((d) => d.status === 'DRAFT').length,
@@ -266,13 +260,6 @@ export default function Dashboard() {
             .select('decision_id')
             .in('case_id', caseIds);
           totalCustomerDecisions += caseDecisions?.length || 0;
-        }
-        if (txnIds.length > 0) {
-          const { data: txnDecisions } = await supabase
-            .from('transaction_decisions')
-            .select('decision_id')
-            .in('txn_id', txnIds);
-          totalCustomerDecisions += txnDecisions?.length || 0;
         }
         setCustomerDecisionCount(totalCustomerDecisions);
       }
