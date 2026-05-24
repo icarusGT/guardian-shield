@@ -54,11 +54,13 @@ npm run dev
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+✅ TypeScript — 84.8%
+✅ PLpgSQL — 13.6%
+✅ JavaScript
+✅ CSS
+✅ HTML
+✅ Shell
+✅ Batchfile
 
 ## How can I deploy this project?
 
